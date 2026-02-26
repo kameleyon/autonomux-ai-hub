@@ -25,11 +25,16 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
     );
 
-    const authHeader = req.headers.get("Authorization")!;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("Missing Authorization header");
     const token = authHeader.replace("Bearer ", "");
-    const { data } = await supabaseClient.auth.getUser(token);
+    const { data, error: authError } = await supabaseClient.auth.getUser(token);
+    if (authError) {
+      console.error("Auth error:", authError.message);
+      throw new Error("Auth failed: " + authError.message);
+    }
     const user = data.user;
-    if (!user?.email) throw new Error("User not authenticated");
+    if (!user?.email) throw new Error("User not authenticated or missing email");
 
     const { packKey } = await req.json();
     const pack = CREDIT_PACKS[packKey];
@@ -67,6 +72,7 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
+    console.error("create-checkout error:", error.message);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
