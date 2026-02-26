@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRealtimeProfile } from "@/hooks/useRealtimeProfile";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ const creditPacks = [
 
 const Billing = () => {
   const { user } = useAuth();
+  useRealtimeProfile(user?.id);
   const [selected, setSelected] = useState<number | null>(null);
 
   const { data: profile } = useQuery({

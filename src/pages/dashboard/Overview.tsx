@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRealtimeRuns } from "@/hooks/useRealtimeRuns";
+import { useRealtimeDeployments } from "@/hooks/useRealtimeDeployments";
 import { useCountUp } from "@/hooks/useCountUp";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,6 +34,8 @@ const StatCard = ({ label, value, icon: Icon, suffix = "" }: { label: string; va
 const Overview = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
+  useRealtimeRuns(user?.id);
+  useRealtimeDeployments(user?.id);
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
