@@ -65,15 +65,30 @@ const DeployWizard = () => {
     setDeploying(true);
 
     try {
-      // Encrypt and save credentials
+      // Encrypt and save credentials (upsert to avoid duplicates)
       for (const [type, value] of Object.entries(credentials)) {
         if (value) {
           const encrypted = await encryptCredential(value);
-          await supabase.from("user_credentials").insert({
-            user_id: user.id,
-            credential_type: type,
-            encrypted_value: encrypted,
-          });
+
+          const { data: existing } = await supabase
+            .from("user_credentials")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("credential_type", type)
+            .maybeSingle();
+
+          if (existing) {
+            await supabase
+              .from("user_credentials")
+              .update({ encrypted_value: encrypted })
+              .eq("id", existing.id);
+          } else {
+            await supabase.from("user_credentials").insert({
+              user_id: user.id,
+              credential_type: type,
+              encrypted_value: encrypted,
+            });
+          }
         }
       }
 
@@ -103,8 +118,9 @@ const DeployWizard = () => {
 
       setDeploying(false);
       setDeployed(true);
-    } catch (err: any) {
-      toast.error("Encryption failed: " + err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Encryption failed: " + message);
       setDeploying(false);
     }
   };
@@ -138,9 +154,12 @@ const DeployWizard = () => {
     <div className="bg-background min-h-screen">
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Back */}
-        <Link to={`/marketplace/${agent.slug}`} className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-6">
-          <ArrowLeft size={14} /> Back to {agent.name}
-        </Link>
+        <button
+          onClick={() => navigate(-1)}
+          className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-6"
+        >
+          <ArrowLeft size={14} /> Back
+        </button>
 
         <h1 className="text-2xl font-medium font-display mb-2">Deploy {agent.name}</h1>
         <p className="text-muted-foreground mb-8">{agent.base_credit_cost} credits per run</p>
