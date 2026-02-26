@@ -9,7 +9,7 @@
   - Dark mode: background `#0F0F1A`, surfaces `#1A1A2E` / `#1E1E32`, text `#F5F5F5`, muted `#9CA3AF`, borders `#2D2D44`
   - Success `#10B981`, Warning `#F59E0B`, Error `#EF4444`
 - Update `tailwind.config.ts` with gradient utilities, semantic colors, updated border radii (12-16px cards, 8px buttons)
-- Add Inter / Plus Jakarta Sans font family
+- Add Montserrat font family
 - Add gradient button variant to `button.tsx`, `accent` badge variant, orange focus rings on inputs, `rounded-xl` cards
 - Add utility classes: `.btn-gradient`, gradient text, accent tag styles
 

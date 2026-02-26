@@ -53,7 +53,9 @@ const App = () => (
               <Route path="/dashboard/credentials" element={<Credentials />} />
               <Route path="/dashboard/settings" element={<DashboardSettings />} />
             </Route>
-            <Route path="*" element={<NotFound />} />
+            <Route element={<Layout />}>
+              <Route path="*" element={<NotFound />} />
+            </Route>
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
