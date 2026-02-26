@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Menu, X, Sun, Moon } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Menu, X, Sun, Moon, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/logo.png";
 
 const navLinks = [
@@ -11,6 +12,8 @@ const navLinks = [
 ];
 
 const Navbar = () => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dark, setDark] = useState(() =>
@@ -68,16 +71,34 @@ const Navbar = () => {
             >
               {dark ? <Sun size={18} /> : <Moon size={18} />}
             </Button>
-            <Button
-              variant="ghost"
-              className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-              asChild
-            >
-              <Link to="/signin">Sign In</Link>
-            </Button>
-            <Button variant="gradient" size="sm" asChild>
-              <Link to="/signup">Get Started</Link>
-            </Button>
+            {user ? (
+              <>
+                <Button variant="gradient" size="sm" asChild>
+                  <Link to="/dashboard">Dashboard</Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={async () => { await signOut(); navigate("/"); }}
+                  className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                >
+                  <LogOut size={18} />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                  asChild
+                >
+                  <Link to="/signin">Sign In</Link>
+                </Button>
+                <Button variant="gradient" size="sm" asChild>
+                  <Link to="/signup">Get Started</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile hamburger */}
@@ -117,20 +138,33 @@ const Navbar = () => {
               </Link>
             ))}
             <div className="pt-3 border-t border-sidebar-border flex flex-col gap-2">
-              <Button
-                variant="ghost"
-                className="justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-                asChild
-              >
-                <Link to="/signin" onClick={() => setMobileOpen(false)}>
-                  Sign In
-                </Link>
-              </Button>
-              <Button variant="gradient" asChild>
-                <Link to="/signup" onClick={() => setMobileOpen(false)}>
-                  Get Started
-                </Link>
-              </Button>
+              {user ? (
+                <>
+                  <Button variant="gradient" asChild>
+                    <Link to="/dashboard" onClick={() => setMobileOpen(false)}>Dashboard</Link>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="justify-start text-sidebar-foreground/70"
+                    onClick={async () => { setMobileOpen(false); await signOut(); navigate("/"); }}
+                  >
+                    <LogOut size={16} className="mr-2" /> Sign Out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    className="justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                    asChild
+                  >
+                    <Link to="/signin" onClick={() => setMobileOpen(false)}>Sign In</Link>
+                  </Button>
+                  <Button variant="gradient" asChild>
+                    <Link to="/signup" onClick={() => setMobileOpen(false)}>Get Started</Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
