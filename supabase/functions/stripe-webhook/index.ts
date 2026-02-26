@@ -21,14 +21,19 @@ serve(async (req) => {
   const body = await req.text();
   const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 
+  if (!webhookSecret) {
+    console.error("STRIPE_WEBHOOK_SECRET is not configured");
+    return new Response(JSON.stringify({ error: "Webhook secret not configured" }), { status: 500 });
+  }
+
+  if (!signature) {
+    console.error("Missing stripe-signature header");
+    return new Response(JSON.stringify({ error: "Missing signature" }), { status: 400 });
+  }
+
   let event: Stripe.Event;
   try {
-    if (webhookSecret && signature) {
-      event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
-    } else {
-      // Fallback: parse without signature verification (dev only)
-      event = JSON.parse(body) as Stripe.Event;
-    }
+    event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
   } catch (err) {
     console.error("Webhook signature verification failed:", err.message);
     return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 400 });
@@ -50,20 +55,16 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Get current balance
-    const { data: profile } = await adminClient
-      .from("profiles")
-      .select("credits_balance")
-      .eq("user_id", userId)
-      .single();
+    // Atomically add credits
+    const { data: newBalance, error: addErr } = await adminClient.rpc("add_credits", {
+      p_user_id: userId,
+      p_amount: credits,
+    });
 
-    const newBalance = (profile?.credits_balance ?? 0) + credits;
-
-    // Update balance
-    await adminClient
-      .from("profiles")
-      .update({ credits_balance: newBalance })
-      .eq("user_id", userId);
+    if (addErr || newBalance === -1) {
+      console.error("Failed to add credits", addErr);
+      return new Response(JSON.stringify({ error: "Failed to add credits" }), { status: 500 });
+    }
 
     // Log transaction
     await adminClient.from("transactions").insert({
