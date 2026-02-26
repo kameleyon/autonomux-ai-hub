@@ -346,6 +346,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_credits: {
+        Args: { p_amount: number; p_user_id: string }
+        Returns: number
+      }
       deduct_credits: {
         Args: { p_amount: number; p_user_id: string }
         Returns: number

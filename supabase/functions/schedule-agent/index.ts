@@ -6,6 +6,12 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isValidUUID(value: string): boolean {
+  return UUID_REGEX.test(value);
+}
+
 const INTERVALS: Record<string, { cron: string; label: string }> = {
   every_15_min: { cron: "*/15 * * * *", label: "Every 15 minutes" },
   every_hour: { cron: "0 * * * *", label: "Hourly" },
@@ -54,6 +60,13 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (!isValidUUID(deployment_id)) {
+      return new Response(JSON.stringify({ error: "Invalid deployment_id format" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -89,9 +102,16 @@ Deno.serve(async (req) => {
       }
 
       const cronExpr = INTERVALS[interval].cron;
+      if (!/^[\d\s\*\/,-]+$/.test(cronExpr)) {
+        return new Response(JSON.stringify({ error: "Invalid cron expression" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const jobName = `autonomux_deployment_${deployment_id}`;
+      const sanitizedId = deployment_id.replace(/[^a-f0-9-]/gi, "");
+      const jobName = `autonomux_deployment_${sanitizedId}`;
 
       // Remove existing job if any
       const { data: existingJob } = await adminClient
@@ -177,7 +197,8 @@ Deno.serve(async (req) => {
     }
 
     if (action === "disable") {
-      const jobName = `autonomux_deployment_${deployment_id}`;
+      const sanitizedId = deployment_id.replace(/[^a-f0-9-]/gi, "");
+      const jobName = `autonomux_deployment_${sanitizedId}`;
 
       // Try to unschedule
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
