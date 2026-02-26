@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRealtimeRuns } from "@/hooks/useRealtimeRuns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,6 +20,7 @@ const statusStyles: Record<string, string> = {
 
 const RunHistory = () => {
   const { user } = useAuth();
+  useRealtimeRuns(user?.id);
   const [statusFilter, setStatusFilter] = useState("all");
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -40,10 +42,6 @@ const RunHistory = () => {
       return data ?? [];
     },
     enabled: !!deployments,
-    refetchInterval: (query) => {
-      const data = query.state.data as any[] | undefined;
-      return (data ?? []).some((r) => r.status === "running" || r.status === "queued") ? 5000 : false;
-    },
   });
 
   const filtered = (runs ?? []).filter((r) => statusFilter === "all" || r.status === statusFilter);

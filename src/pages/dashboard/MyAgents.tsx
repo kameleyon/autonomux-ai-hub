@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRealtimeRuns } from "@/hooks/useRealtimeRuns";
+import { useRealtimeDeployments } from "@/hooks/useRealtimeDeployments";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,6 +35,8 @@ const INTERVAL_LABELS: Record<string, string> = {
 const MyAgents = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
+  useRealtimeRuns(user?.id);
+  useRealtimeDeployments(user?.id);
   const [runningId, setRunningId] = useState<string | null>(null);
   const [scheduleDeployment, setScheduleDeployment] = useState<any | null>(null);
 

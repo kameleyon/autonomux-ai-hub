@@ -1,9 +1,11 @@
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { NavLink } from "@/components/NavLink";
+import { useRealtimeStatus } from "@/hooks/useRealtimeStatus";
 import {
   LayoutDashboard, Bot, History, CreditCard, KeyRound, Settings,
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 const links = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -14,9 +16,16 @@ const links = [
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
+const statusConfig = {
+  connected: { color: "bg-success", label: "Live" },
+  reconnecting: { color: "bg-warning", label: "Reconnecting..." },
+  disconnected: { color: "bg-destructive", label: "Disconnected" },
+} as const;
+
 const DashboardSidebar = () => {
   const { user } = useAuth();
   const location = useLocation();
+  const realtimeStatus = useRealtimeStatus();
 
   return (
     <>
@@ -49,6 +58,19 @@ const DashboardSidebar = () => {
             </NavLink>
           ))}
         </nav>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="p-4 border-t border-sidebar-border flex items-center gap-2 text-xs text-sidebar-foreground/50">
+                <span className={`w-2 h-2 rounded-full ${statusConfig[realtimeStatus].color} ${realtimeStatus === "reconnecting" ? "animate-pulse" : ""}`} />
+                {statusConfig[realtimeStatus].label}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>Real-time connection status</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </aside>
 
       {/* Mobile bottom tab bar */}
