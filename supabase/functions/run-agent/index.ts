@@ -57,31 +57,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const userId = claimsData.claims.sub;
-    const { deployment_id } = await req.json();
+    const body = await req.json();
+    const { deployment_id, scheduled } = body;
 
     if (!deployment_id) {
       return new Response(JSON.stringify({ error: "Missing deployment_id" }), {
@@ -94,6 +71,51 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    let userId: string;
+
+    if (scheduled === true) {
+      // Scheduled run — called by pg_cron with service role key, skip JWT auth
+      // Look up user_id from the deployment
+      const { data: dep } = await adminClient
+        .from("deployments")
+        .select("user_id")
+        .eq("id", deployment_id)
+        .single();
+
+      if (!dep) {
+        return new Response(JSON.stringify({ error: "Deployment not found" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      userId = dep.user_id;
+    } else {
+      // Manual run — require JWT auth
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader?.startsWith("Bearer ")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const supabase = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+
+      const token = authHeader.replace("Bearer ", "");
+      const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+      if (claimsError || !claimsData?.claims) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      userId = claimsData.claims.sub;
+    }
 
     // Fetch deployment with agent
     const { data: deployment, error: depErr } = await adminClient
@@ -133,6 +155,7 @@ Deno.serve(async (req) => {
         deployment_id,
         status: "running",
         started_at: new Date().toISOString(),
+        input_summary: scheduled ? "[Scheduled run]" : null,
       })
       .select()
       .single();
@@ -152,10 +175,27 @@ Deno.serve(async (req) => {
       .single();
 
     if (!profile || profile.credits_balance < creditCost) {
+      const errMsg = scheduled
+        ? "Insufficient credits — schedule paused"
+        : "Insufficient credits";
+
       await adminClient
         .from("runs")
-        .update({ status: "failed", error_message: "Insufficient credits", completed_at: new Date().toISOString() })
+        .update({ status: "failed", error_message: errMsg, completed_at: new Date().toISOString() })
         .eq("id", run.id);
+
+      // Auto-disable schedule if this was a scheduled run
+      if (scheduled) {
+        await adminClient
+          .from("deployments")
+          .update({
+            schedule_enabled: false,
+            schedule_interval: null,
+            schedule_cron: null,
+            next_run_at: null,
+          })
+          .eq("id", deployment_id);
+      }
 
       return new Response(
         JSON.stringify({ error: "Insufficient credits", balance: profile?.credits_balance ?? 0 }),

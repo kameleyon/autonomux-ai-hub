@@ -81,7 +81,11 @@ export type Database = {
           created_at: string
           id: string
           last_run_at: string | null
+          next_run_at: string | null
           schedule: string | null
+          schedule_cron: string | null
+          schedule_enabled: boolean | null
+          schedule_interval: string | null
           status: Database["public"]["Enums"]["deployment_status"]
           updated_at: string
           user_id: string
@@ -92,7 +96,11 @@ export type Database = {
           created_at?: string
           id?: string
           last_run_at?: string | null
+          next_run_at?: string | null
           schedule?: string | null
+          schedule_cron?: string | null
+          schedule_enabled?: boolean | null
+          schedule_interval?: string | null
           status?: Database["public"]["Enums"]["deployment_status"]
           updated_at?: string
           user_id: string
@@ -103,7 +111,11 @@ export type Database = {
           created_at?: string
           id?: string
           last_run_at?: string | null
+          next_run_at?: string | null
           schedule?: string | null
+          schedule_cron?: string | null
+          schedule_enabled?: boolean | null
+          schedule_interval?: string | null
           status?: Database["public"]["Enums"]["deployment_status"]
           updated_at?: string
           user_id?: string
@@ -193,6 +205,35 @@ export type Database = {
             foreignKeyName: "runs_deployment_id_fkey"
             columns: ["deployment_id"]
             isOneToOne: false
+            referencedRelation: "deployments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheduled_jobs: {
+        Row: {
+          created_at: string
+          cron_job_id: number | null
+          deployment_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          cron_job_id?: number | null
+          deployment_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          cron_job_id?: number | null
+          deployment_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_jobs_deployment_id_fkey"
+            columns: ["deployment_id"]
+            isOneToOne: true
             referencedRelation: "deployments"
             referencedColumns: ["id"]
           },

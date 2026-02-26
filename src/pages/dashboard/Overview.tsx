@@ -6,7 +6,7 @@ import { useCountUp } from "@/hooks/useCountUp";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bot, Zap, Coins, TrendingUp, Plus, AlertTriangle, XCircle } from "lucide-react";
+import { Bot, Zap, Coins, TrendingUp, Plus, AlertTriangle, XCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 
@@ -63,6 +63,7 @@ const Overview = () => {
   });
 
   const activeAgents = (deployments ?? []).filter((d) => d.status === "active").length;
+  const scheduledAgents = (deployments ?? []).filter((d: any) => d.schedule_enabled).length;
   const totalRuns = runs?.length ?? 0;
   const successRuns = (runs ?? []).filter((r) => r.status === "success").length;
   const successRate = totalRuns > 0 ? Math.round((successRuns / totalRuns) * 100) : 0;
@@ -119,8 +120,9 @@ const Overview = () => {
         </Button>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard label="Active Agents" value={activeAgents} icon={Bot} />
+        <StatCard label="Scheduled" value={scheduledAgents} icon={Clock} />
         <StatCard label="Total Runs" value={totalRuns} icon={Zap} />
         <StatCard label="Credits Remaining" value={creditsBalance} icon={Coins} />
         <StatCard label="Success Rate" value={successRate} icon={TrendingUp} suffix="%" />

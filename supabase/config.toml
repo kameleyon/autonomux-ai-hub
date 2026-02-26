@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.run-agent]
 verify_jwt = false
+
+[functions.schedule-agent]
+verify_jwt = false
