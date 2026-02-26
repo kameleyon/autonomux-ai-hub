@@ -8,10 +8,10 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const CREDIT_PACKS: Record<string, { credits: number; priceId: string }> = {
-  starter: { credits: 100, priceId: "price_1T54KBBM4N3i4rfOCOWL9G8q" },
-  growth:  { credits: 500, priceId: "price_1T54KCBM4N3i4rfOVyqAHVoJ" },
-  scale:   { credits: 2000, priceId: "price_1T54KCBM4N3i4rfOBk1vwaYt" },
+const CREDIT_PACKS: Record<string, { credits: number; envKey: string }> = {
+  starter: { credits: 100, envKey: "STRIPE_PRICE_STARTER" },
+  growth:  { credits: 500, envKey: "STRIPE_PRICE_GROWTH" },
+  scale:   { credits: 2000, envKey: "STRIPE_PRICE_SCALE" },
 };
 
 serve(async (req) => {
@@ -35,11 +35,13 @@ serve(async (req) => {
     const pack = CREDIT_PACKS[packKey];
     if (!pack) throw new Error("Invalid pack");
 
+    const priceId = Deno.env.get(pack.envKey);
+    if (!priceId) throw new Error(`Stripe price ID not configured for ${packKey}`);
+
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
     });
 
-    // Find or skip existing customer
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId: string | undefined;
     if (customers.data.length > 0) {
@@ -49,7 +51,7 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
-      line_items: [{ price: pack.priceId, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       mode: "payment",
       metadata: {
         user_id: user.id,

@@ -6,41 +6,82 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-function getPrompt(category: string, config: Record<string, any>): { system: string; user: string } {
+function getPrompt(category: string, slug: string, config: Record<string, any>): { system: string; user: string } {
   const configStr = JSON.stringify(config, null, 2);
 
-  switch (category) {
-    case "Email Automation":
-      return {
-        system: "You are an email auto-responder agent. Generate professional email replies based on the user's rules and preferences.",
-        user: `Generate a sample email response with these settings:\nTone: ${config.tone || "Professional"}\nLength: ${config.response_length || "Medium"}\nRules: ${config.rules || "Be polite and helpful"}`,
-      };
-    case "Content Creation":
-      return {
-        system: "You are a professional blog writer. Create SEO-optimized, engaging blog content.",
-        user: `Write a blog post:\nTopic: ${config.topic || "AI Automation"}\nTone: ${config.tone || "Informative"}\nWord count: ${config.word_count || "1000"}\nTarget audience: ${config.target_audience || "General audience"}`,
-      };
-    case "Data & Analytics":
-      return {
-        system: "You are a data extraction specialist. Parse and structure information from the provided text.",
-        user: `Extract data from the following:\nInput: ${config.input_text || "(no input provided)"}\nOutput format: ${config.output_format || "JSON"}`,
-      };
-    case "Customer Support":
-      return {
-        system: "You are a customer support agent. Answer questions helpfully based on the knowledge base provided.",
-        user: `Knowledge base: ${config.knowledge_base || "(none)"}\nQuestion: ${config.question || "How can I help?"}`,
-      };
-    case "Sales":
-      return {
-        system: "You are a lead research assistant. Generate detailed lead profiles based on criteria.",
-        user: `Generate leads:\nIndustry: ${config.industry || "Technology"}\nCompany size: ${config.company_size || "11-50"}\nLocation: ${config.location || "United States"}\nNumber: ${config.num_leads || "10"}`,
-      };
-    default:
-      return {
-        system: "You are an AI agent. Complete the requested task based on the configuration provided.",
-        user: `Task configuration:\n${configStr}`,
-      };
+  if (category === "Email" || category === "Email Automation" || slug === "email-auto-responder") {
+    return {
+      system: "You are an email auto-responder agent. Generate professional email replies based on the user's rules and preferences.",
+      user: `Generate a sample email response with these settings:\nTone: ${config.tone || "Professional"}\nLength: ${config.response_length || "Medium"}\nRules: ${config.rules || "Be polite and helpful"}`,
+    };
   }
+
+  if (category === "Content" || category === "Content Creation") {
+    if (slug === "meeting-summarizer") {
+      return {
+        system: "You are a meeting notes specialist. Analyze the transcript and produce a structured summary.",
+        user: `Meeting transcript:\n${config.transcript || "(none)"}\nOutput type: ${config.output_type || "All"}\n\nProvide:\n1. Executive Summary\n2. Key Discussion Points\n3. Decisions Made\n4. Action Items\n5. Follow-up Items`,
+      };
+    }
+    return {
+      system: "You are a professional blog writer. Create SEO-optimized, engaging blog content.",
+      user: `Write a blog post:\nTopic: ${config.topic || "AI Automation"}\nTone: ${config.tone || "Informative"}\nWord count: ${config.word_count || "1000"}\nTarget audience: ${config.target_audience || "General audience"}`,
+    };
+  }
+
+  if (category === "Data" || category === "Data & Analytics") {
+    if (slug === "invoice-processor") {
+      return {
+        system: "You are an accounts payable specialist. Extract invoice data accurately.",
+        user: `Invoice text:\n${config.input_text || "(none)"}\nFields: ${config.fields_to_extract || "all"}\nFormat: ${config.output_format || "JSON"}`,
+      };
+    }
+    return {
+      system: "You are a data extraction specialist. Parse and structure information from the provided text.",
+      user: `Extract data from:\nInput: ${config.input_text || "(no input)"}\nFormat: ${config.output_format || "JSON"}`,
+    };
+  }
+
+  if (category === "Support" || category === "Customer Support") {
+    return {
+      system: "You are a customer support agent. Answer questions helpfully based on the knowledge base provided.",
+      user: `Knowledge base: ${config.knowledge_base || "(none)"}\nQuestion: ${config.question || "How can I help?"}`,
+    };
+  }
+
+  if (category === "Sales") {
+    return {
+      system: "You are a lead research assistant. Generate detailed lead profiles based on criteria.",
+      user: `Generate leads:\nIndustry: ${config.industry || "Technology"}\nCompany size: ${config.company_size || "11-50"}\nLocation: ${config.location || "United States"}\nNumber: ${config.num_leads || "10"}`,
+    };
+  }
+
+  if (category === "Marketing") {
+    return {
+      system: "You are a competitive intelligence analyst. Analyze competitors and provide actionable insights.",
+      user: `Competitor: ${config.competitor_url || "(none)"}\nFocus: ${config.focus_areas || "All"}\nIndustry: ${config.industry || "Technology"}\n\nProvide overview, recent changes, strengths/weaknesses, and recommended actions.`,
+    };
+  }
+
+  if (category === "Social Media") {
+    return {
+      system: "You are a social media content strategist. Create engaging, platform-appropriate posts.",
+      user: `Create ${config.num_posts || "5"} posts about: ${config.topic || "AI"}\nPlatform: ${config.platforms || "All"}\nTone: ${config.tone || "Professional"}\n\nInclude hashtags and posting suggestions.`,
+    };
+  }
+
+  if (category === "Development") {
+    return {
+      system: "You are a senior software engineer performing a code review.",
+      user: `Language: ${config.language || "TypeScript"}\nFocus: ${config.focus || "All"}\n\nCode:\n\`\`\`\n${config.code || "(no code)"}\n\`\`\`\n\nProvide: quality score, issues, suggestions, and improved code.`,
+    };
+  }
+
+  // Default fallback
+  return {
+    system: "You are an AI agent. Complete the requested task based on the configuration provided.",
+    user: `Task configuration:\n${configStr}`,
+  };
 }
 
 Deno.serve(async (req) => {
@@ -75,8 +116,6 @@ Deno.serve(async (req) => {
     let userId: string;
 
     if (scheduled === true) {
-      // Scheduled run — called by pg_cron with service role key, skip JWT auth
-      // Look up user_id from the deployment
       const { data: dep } = await adminClient
         .from("deployments")
         .select("user_id")
@@ -91,7 +130,6 @@ Deno.serve(async (req) => {
       }
       userId = dep.user_id;
     } else {
-      // Manual run — require JWT auth
       const authHeader = req.headers.get("Authorization");
       if (!authHeader?.startsWith("Bearer ")) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -107,14 +145,14 @@ Deno.serve(async (req) => {
       );
 
       const token = authHeader.replace("Bearer ", "");
-      const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-      if (claimsError || !claimsData?.claims) {
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+      if (authError || !authUser) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      userId = claimsData.claims.sub;
+      userId = authUser.id;
     }
 
     // Fetch deployment with agent
@@ -218,7 +256,7 @@ Deno.serve(async (req) => {
 
     // Build prompt
     const config = (deployment.config as Record<string, any>) ?? {};
-    const { system, user: userMsg } = getPrompt(agent.category, config);
+    const { system, user: userMsg } = getPrompt(agent.category, agent.slug, config);
 
     // Call OpenRouter
     try {
@@ -243,7 +281,6 @@ Deno.serve(async (req) => {
       if (!llmRes.ok || llmData.error) {
         const errMsg = llmData.error?.message || JSON.stringify(llmData.error) || "LLM request failed";
 
-        // Refund credits atomically
         await adminClient.rpc("refund_credits", { p_user_id: userId, p_amount: creditCost });
         await adminClient.from("transactions").insert({
           user_id: userId,
@@ -277,7 +314,6 @@ Deno.serve(async (req) => {
         })
         .eq("id", run.id);
 
-      // Update last_run_at
       await adminClient
         .from("deployments")
         .update({ last_run_at: new Date().toISOString() })
@@ -290,7 +326,6 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } catch (llmErr) {
-      // Refund on network error atomically
       await adminClient.rpc("refund_credits", { p_user_id: userId, p_amount: creditCost });
       await adminClient.from("transactions").insert({
         user_id: userId,
