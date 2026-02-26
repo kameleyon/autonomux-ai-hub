@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -122,13 +122,14 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-weight: 500;
   }
 }
 
 @layer utilities {
   .btn-gradient {
-    @apply text-white font-semibold rounded-lg px-6 py-3 transition-all;
+    @apply text-white font-medium rounded-lg px-6 py-3 transition-all;
     background: linear-gradient(135deg, hsl(var(--gradient-from)), hsl(var(--gradient-to)));
   }
   .btn-gradient:hover {
@@ -144,7 +145,7 @@
   }
 
   .accent-tag {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-normal;
     background-color: hsl(var(--accent-tag-bg));
     color: hsl(var(--accent-tag-text));
   }
