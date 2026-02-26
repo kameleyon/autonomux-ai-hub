@@ -58,8 +58,8 @@ serve(async (req) => {
         credits: String(pack.credits),
         pack_key: packKey,
       },
-      success_url: `${req.headers.get("origin")}/dashboard/billing?success=true`,
-      cancel_url: `${req.headers.get("origin")}/dashboard/billing?canceled=true`,
+      success_url: `${req.headers.get("origin") || req.headers.get("referer")?.replace(/\/+$/, "") || "https://id-preview--db47a313-f8eb-4c54-8689-5ce1cc7236e9.lovable.app"}/dashboard/billing?success=true`,
+      cancel_url: `${req.headers.get("origin") || req.headers.get("referer")?.replace(/\/+$/, "") || "https://id-preview--db47a313-f8eb-4c54-8689-5ce1cc7236e9.lovable.app"}/dashboard/billing?canceled=true`,
     });
 
     return new Response(JSON.stringify({ url: session.url }), {
