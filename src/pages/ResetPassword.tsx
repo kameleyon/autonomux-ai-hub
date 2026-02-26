@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,12 +14,30 @@ const ResetPassword = () => {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [valid, setValid] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setValid(true);
+      }
+      setChecking(false);
+    });
+
+    // Also check the hash for backwards compatibility
     const hash = window.location.hash;
     if (hash.includes("type=recovery")) {
       setValid(true);
+      setChecking(false);
     }
+
+    // Timeout — if no event fires after 3 seconds, stop checking
+    const timeout = setTimeout(() => setChecking(false), 3000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -39,10 +57,23 @@ const ResetPassword = () => {
     }
   };
 
+  if (checking) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   if (!valid) {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 bg-background">
-        <p className="text-muted-foreground">Invalid or expired reset link.</p>
+        <div className="text-center space-y-4">
+          <p className="text-muted-foreground">Invalid or expired reset link.</p>
+          <Button variant="outline" asChild>
+            <Link to="/forgot-password">Request a new reset link</Link>
+          </Button>
+        </div>
       </div>
     );
   }

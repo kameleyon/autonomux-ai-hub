@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Check } from "lucide-react";
+import { toast } from "sonner";
 
 const plans = [
   {
@@ -37,6 +39,8 @@ const faqs = [
 ];
 
 const Pricing = () => {
+  const { user } = useAuth();
+
   return (
     <div className="bg-background animate-fade-in">
       {/* Header */}
@@ -55,7 +59,7 @@ const Pricing = () => {
             <Card
               key={plan.name}
               className={`relative overflow-hidden transition-all hover:-translate-y-0.5 ${
-                plan.popular ? "ring-2 ring-accent shadow-lg scale-[1.02]" : ""
+                plan.popular ? "gradient-border shadow-lg scale-[1.02]" : ""
               }`}
             >
               {plan.popular && (
@@ -80,9 +84,26 @@ const Pricing = () => {
                     </li>
                   ))}
                 </ul>
-                <Button variant="gradient" className="w-full" asChild>
-                  <Link to="/signup">Get Started</Link>
-                </Button>
+                {user ? (
+                  plan.name === "Free" ? (
+                    <Button variant="outline" className="w-full" disabled>Current Plan</Button>
+                  ) : (
+                    <Button
+                      variant="gradient"
+                      className="w-full"
+                      onClick={() => {
+                        toast.info("Plan upgrades coming soon! Buy credit packs in the meantime.");
+                      }}
+                      asChild
+                    >
+                      <Link to="/dashboard/billing">Upgrade</Link>
+                    </Button>
+                  )
+                ) : (
+                  <Button variant="gradient" className="w-full" asChild>
+                    <Link to="/signup">Get Started</Link>
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ))}
