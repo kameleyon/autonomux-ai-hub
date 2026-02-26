@@ -12,12 +12,16 @@ import { Progress } from "@/components/ui/progress";
 import { Bot, Zap, Coins, TrendingUp, Plus, AlertTriangle, XCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
+import type { DeploymentWithAgent } from "@/types/deployment";
+import type { LucideIcon } from "lucide-react";
 
 const PLAN_LIMITS: Record<string, number | null> = {
   free: 3,
   pro: null,
   business: null,
 };
+
+const ALLOWED_MARKDOWN_ELEMENTS = ["p", "h1", "h2", "h3", "h4", "strong", "em", "ul", "ol", "li", "code", "pre", "blockquote"];
 
 const StatCard = ({
   label,
@@ -29,7 +33,7 @@ const StatCard = ({
 }: {
   label: string;
   value: number;
-  icon: any;
+  icon: LucideIcon;
   suffix?: string;
   sublabel?: string;
   children?: React.ReactNode;
@@ -72,8 +76,8 @@ const Overview = () => {
   const { data: deployments } = useQuery({
     queryKey: ["my-deployments", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("deployments").select("*, agents(name)").eq("user_id", user!.id);
-      return data ?? [];
+      const { data } = await supabase.from("deployments").select("*, agents(name, base_credit_cost)").eq("user_id", user!.id);
+      return (data ?? []) as DeploymentWithAgent[];
     },
     enabled: !!user,
   });
@@ -83,7 +87,6 @@ const Overview = () => {
     queryFn: async () => {
       const depIds = (deployments ?? []).map((d) => d.id);
       if (depIds.length === 0) return [];
-      // Get runs from this month only
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
@@ -99,13 +102,12 @@ const Overview = () => {
   });
 
   const activeAgents = (deployments ?? []).filter((d) => d.status === "active").length;
-  const scheduledAgents = (deployments ?? []).filter((d: any) => d.schedule_enabled).length;
+  const scheduledAgents = (deployments ?? []).filter((d) => d.schedule_enabled === true).length;
   const totalRuns = runs?.length ?? 0;
   const successRuns = (runs ?? []).filter((r) => r.status === "success").length;
   const successRate = totalRuns > 0 ? Math.round((successRuns / totalRuns) * 100) : 0;
   const creditsBalance = profile?.credits_balance ?? 0;
 
-  // Plan-based credit progress
   const planTier = profile?.plan_tier ?? "free";
   const planLimit = PLAN_LIMITS[planTier];
   const planMaxCredits = planTier === "free" ? 25 : planTier === "pro" ? 200 : 1000;
@@ -135,14 +137,14 @@ const Overview = () => {
         qc.invalidateQueries({ queryKey: ["my-runs-overview"] });
         qc.invalidateQueries({ queryKey: ["profile"] });
       }
-    } catch (err: any) {
-      toast.error(err.message || "Run failed");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Run failed";
+      toast.error(message);
     }
   };
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Credits Warning */}
       {creditsBalance <= 0 && (
         <div className="flex items-center gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/20">
           <XCircle size={20} className="text-destructive shrink-0" />
@@ -181,10 +183,9 @@ const Overview = () => {
         />
         <StatCard label="Scheduled" value={scheduledAgents} icon={Clock} />
         <StatCard
-          label="Total Runs"
+          label="Runs This Month"
           value={totalRuns}
           icon={Zap}
-          sublabel="This month"
         />
         <StatCard
           label="Credits Remaining"
@@ -216,11 +217,13 @@ const Overview = () => {
                 <Card key={run.id}>
                   <CardContent className="p-4 flex items-center justify-between gap-4">
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium">{(dep as any)?.agents?.name ?? "Agent"}</p>
+                      <p className="text-sm font-medium">{dep?.agents?.name ?? "Agent"}</p>
                       <p className="text-xs text-muted-foreground">{new Date(run.created_at).toLocaleString()}</p>
                       {run.status === "success" && run.output_summary && (
                         <div className="text-xs text-muted-foreground mt-1 truncate prose prose-xs max-w-none dark:prose-invert">
-                          <ReactMarkdown>{run.output_summary.substring(0, 100) + "..."}</ReactMarkdown>
+                          <ReactMarkdown allowedElements={ALLOWED_MARKDOWN_ELEMENTS}>
+                            {run.output_summary.substring(0, 100) + "..."}
+                          </ReactMarkdown>
                         </div>
                       )}
                     </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,6 +11,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Clock, Coins } from "lucide-react";
 import { differenceInSeconds, differenceInMinutes } from "date-fns";
 import ReactMarkdown from "react-markdown";
+import type { DeploymentWithAgent } from "@/types/deployment";
+
+const ALLOWED_MARKDOWN_ELEMENTS = ["p", "h1", "h2", "h3", "h4", "strong", "em", "ul", "ol", "li", "code", "pre", "blockquote"];
 
 const statusStyles: Record<string, string> = {
   success: "bg-success text-success-foreground",
@@ -32,14 +35,16 @@ const RunHistory = () => {
   const { data: deployments } = useQuery({
     queryKey: ["my-deployments", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("deployments").select("*, agents(name)").eq("user_id", user!.id);
-      return data ?? [];
+      const { data } = await supabase.from("deployments").select("*, agents(name, base_credit_cost)").eq("user_id", user!.id);
+      return (data ?? []) as DeploymentWithAgent[];
     },
     enabled: !!user,
   });
 
+  const depIdKey = (deployments ?? []).map((d) => d.id).sort().join(",");
+
   const { data: runs, isLoading } = useQuery({
-    queryKey: ["my-runs", user?.id, deployments?.map((d) => d.id).join(",")],
+    queryKey: ["my-runs", user?.id, depIdKey],
     queryFn: async () => {
       const depIds = (deployments ?? []).map((d) => d.id);
       if (depIds.length === 0) return [];
@@ -52,7 +57,7 @@ const RunHistory = () => {
   // Unique agents for filter
   const agentOptions = Array.from(
     new Map(
-      (deployments ?? []).map((d: any) => [d.agent_id, d.agents?.name ?? "Unknown"])
+      (deployments ?? []).map((d) => [d.agent_id, d.agents?.name ?? "Unknown"])
     ).entries()
   );
 
@@ -69,7 +74,7 @@ const RunHistory = () => {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  const formatDuration = (run: any) => {
+  const formatDuration = (run: { started_at: string | null; completed_at: string | null }) => {
     if (!run.started_at || !run.completed_at) return "—";
     const secs = differenceInSeconds(new Date(run.completed_at), new Date(run.started_at));
     if (secs < 60) return `${secs}s`;
@@ -136,12 +141,12 @@ const RunHistory = () => {
                   const isExpanded = expanded === run.id;
                   const isScheduled = run.input_summary?.startsWith("[Scheduled");
                   return (
-                    <>
-                      <TableRow key={run.id} className="cursor-pointer" onClick={() => setExpanded(isExpanded ? null : run.id)}>
+                    <Fragment key={run.id}>
+                      <TableRow className="cursor-pointer" onClick={() => setExpanded(isExpanded ? null : run.id)}>
                         <TableCell className="font-medium">
                           <span className="flex items-center gap-1.5">
                             {isScheduled && <Clock size={13} className="text-accent shrink-0" />}
-                            {(dep as any)?.agents?.name ?? "—"}
+                            {dep?.agents?.name ?? "—"}
                           </span>
                         </TableCell>
                         <TableCell><Badge className={statusStyles[run.status] ?? ""}>{run.status}</Badge></TableCell>
@@ -151,7 +156,7 @@ const RunHistory = () => {
                         <TableCell>{isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</TableCell>
                       </TableRow>
                       {isExpanded && (
-                        <TableRow key={`${run.id}-detail`}>
+                        <TableRow>
                           <TableCell colSpan={6} className="bg-muted/50 p-4">
                             <div className="space-y-2 text-sm">
                               {run.input_summary && <p><span className="font-medium">Input:</span> {run.input_summary}</p>}
@@ -159,7 +164,7 @@ const RunHistory = () => {
                                 <div>
                                   <span className="font-medium">Output:</span>
                                   <div className="mt-1 bg-background p-3 rounded-lg border max-h-[500px] overflow-y-auto prose prose-sm max-w-none dark:prose-invert">
-                                    <ReactMarkdown>{run.output_summary}</ReactMarkdown>
+                                    <ReactMarkdown allowedElements={ALLOWED_MARKDOWN_ELEMENTS}>{run.output_summary}</ReactMarkdown>
                                   </div>
                                 </div>
                               )}
@@ -169,14 +174,13 @@ const RunHistory = () => {
                           </TableCell>
                         </TableRow>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
               </TableBody>
             </Table>
           </div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
