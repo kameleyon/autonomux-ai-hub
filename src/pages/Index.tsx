@@ -4,24 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Star, ArrowRight, Search, Settings, Rocket,
-  Mail, Headphones, Database,
-  Share2, PenTool, Megaphone, ShoppingCart, Code,
-} from "lucide-react";
+import { Star, ArrowRight, Search, Settings, Rocket } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { iconMap, defaultAgentIcon } from "@/lib/icons";
-
-const categories = [
-  { name: "Marketing", icon: Megaphone },
-  { name: "Sales", icon: ShoppingCart },
-  { name: "Support", icon: Headphones },
-  { name: "Data", icon: Database },
-  { name: "Content", icon: PenTool },
-  { name: "Email", icon: Mail },
-  { name: "Social Media", icon: Share2 },
-  { name: "Development", icon: Code },
-];
+import { APP_CATEGORIES } from "@/lib/categories";
 
 const Index = () => {
   const { data: agents } = useQuery({
@@ -34,6 +20,21 @@ const Index = () => {
         .order("rating", { ascending: false })
         .limit(6);
       return data ?? [];
+    },
+  });
+
+  const { data: categoryCounts } = useQuery({
+    queryKey: ["category-counts"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("agents")
+        .select("category")
+        .eq("is_published", true);
+      const counts: Record<string, number> = {};
+      (data ?? []).forEach((a) => {
+        counts[a.category] = (counts[a.category] || 0) + 1;
+      });
+      return counts;
     },
   });
 
@@ -53,8 +54,12 @@ const Index = () => {
               <Button variant="gradient" size="lg" className="animate-shimmer" asChild>
                 <Link to="/marketplace">Explore Agents</Link>
               </Button>
-              <Button size="lg" className="bg-sidebar-accent border border-sidebar-foreground/40 text-sidebar-foreground hover:bg-sidebar-foreground/10">
-                Watch Demo
+              <Button
+                size="lg"
+                className="bg-sidebar-accent border border-sidebar-foreground/40 text-sidebar-foreground hover:bg-sidebar-foreground/10"
+                onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })}
+              >
+                How It Works
               </Button>
             </div>
             {/* Trust stats */}
@@ -64,7 +69,7 @@ const Index = () => {
                 { label: "Tasks Completed", value: "10,000+" },
                 { label: "Uptime", value: "99.9%" },
               ].map((s) => (
-                <div key={s.label} className="text-center">
+                <div key={s.label} className="text-center animate-fade-in">
                   <p className="text-2xl font-medium text-gradient">{s.value}</p>
                   <p className="text-xs text-sidebar-foreground/50">{s.label}</p>
                 </div>
@@ -74,7 +79,7 @@ const Index = () => {
 
           {/* Glowing agent card mockup */}
           <div className="flex-1 flex justify-center">
-            <Card className="w-96 bg-sidebar-accent backdrop-blur border-sidebar-border shadow-sm">
+            <Card className="w-96 bg-sidebar-accent backdrop-blur border-sidebar-border" style={{ boxShadow: "0 0 60px 20px hsla(358, 81%, 51%, 0.15), 0 0 100px 40px hsla(32, 93%, 54%, 0.1)" }}>
               <CardContent className="p-6 space-y-4">
                 <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white">
                   <Rocket size={28} />
@@ -169,7 +174,7 @@ const Index = () => {
             <h2 className="text-3xl font-medium font-display">Find the Right Agent</h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {categories.map(({ name, icon: Icon }) => (
+            {APP_CATEGORIES.map(({ name, icon: Icon }) => (
               <Link
                 key={name}
                 to={`/marketplace?category=${name}`}
@@ -177,6 +182,9 @@ const Index = () => {
               >
                 <Icon size={28} className="mx-auto text-muted-foreground group-hover:text-accent transition-colors" />
                 <h3 className="font-medium">{name}</h3>
+                {categoryCounts?.[name] != null && (
+                  <span className="text-xs text-muted-foreground">{categoryCounts[name]} agents</span>
+                )}
               </Link>
             ))}
           </div>

@@ -12,8 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Star, Search, Rocket, Filter, X } from "lucide-react";
 import { iconMap, defaultAgentIcon } from "@/lib/icons";
-
-const allCategories = ["Marketing", "Sales", "Support", "Data", "Content", "Email", "Social Media", "Productivity", "Finance"];
+import { CATEGORY_NAMES } from "@/lib/categories";
 
 const Marketplace = () => {
   const [searchParams] = useSearchParams();
@@ -23,9 +22,10 @@ const Marketplace = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
     initialCategory ? [initialCategory] : []
   );
+  const [creditRange, setCreditRange] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
 
-  // Sync category from URL on subsequent navigations (Fix 21)
+  // Sync category from URL on subsequent navigations
   useEffect(() => {
     const cat = searchParams.get("category");
     if (cat) {
@@ -55,14 +55,19 @@ const Marketplace = () => {
     if (selectedCategories.length > 0) {
       list = list.filter((a) => selectedCategories.includes(a.category));
     }
-    // Copy before sorting to avoid mutating React Query cache (Fix 22)
+    if (creditRange !== "all") {
+      if (creditRange === "1-5") list = list.filter((a) => a.base_credit_cost >= 1 && a.base_credit_cost <= 5);
+      else if (creditRange === "5-15") list = list.filter((a) => a.base_credit_cost > 5 && a.base_credit_cost <= 15);
+      else if (creditRange === "15-50") list = list.filter((a) => a.base_credit_cost > 15 && a.base_credit_cost <= 50);
+      else if (creditRange === "50+") list = list.filter((a) => a.base_credit_cost > 50);
+    }
     list = [...list];
     if (sortBy === "popular") list.sort((a, b) => (b.total_deployments ?? 0) - (a.total_deployments ?? 0));
     else if (sortBy === "newest") list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     else if (sortBy === "price") list.sort((a, b) => a.base_credit_cost - b.base_credit_cost);
     else if (sortBy === "rating") list.sort((a, b) => Number(b.rating) - Number(a.rating));
     return list;
-  }, [agents, searchTerm, selectedCategories, sortBy]);
+  }, [agents, searchTerm, selectedCategories, sortBy, creditRange]);
 
   const toggleCategory = (cat: string) => {
     setSelectedCategories((prev) =>
@@ -81,7 +86,7 @@ const Marketplace = () => {
         )}
       </div>
       <div className="space-y-2">
-        {allCategories.map((cat) => (
+        {CATEGORY_NAMES.map((cat) => (
           <label key={cat} className="flex items-center gap-2 text-sm cursor-pointer">
             <Checkbox
               checked={selectedCategories.includes(cat)}
@@ -90,6 +95,27 @@ const Marketplace = () => {
             {cat}
           </label>
         ))}
+      </div>
+
+      <div className="space-y-3 mt-6">
+        <h3 className="font-medium">Credit Cost</h3>
+        <div className="space-y-2">
+          {[
+            { value: "all", label: "All" },
+            { value: "1-5", label: "1-5 credits" },
+            { value: "5-15", label: "5-15 credits" },
+            { value: "15-50", label: "15-50 credits" },
+            { value: "50+", label: "50+ credits" },
+          ].map((opt) => (
+            <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox
+                checked={creditRange === opt.value}
+                onCheckedChange={() => setCreditRange(creditRange === opt.value ? "all" : opt.value)}
+              />
+              {opt.label}
+            </label>
+          ))}
+        </div>
       </div>
     </div>
   );

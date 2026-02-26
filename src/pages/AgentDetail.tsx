@@ -49,6 +49,37 @@ const AgentDetail = () => {
     enabled: !!user && !!agent,
   });
 
+  const { data: agentStats } = useQuery({
+    queryKey: ["agent-stats", agent?.id],
+    queryFn: async () => {
+      const { data: deployments } = await supabase
+        .from("deployments")
+        .select("id")
+        .eq("agent_id", agent!.id);
+
+      if (!deployments?.length) return { avgDuration: null, successRate: null, totalRuns: 0 };
+
+      const depIds = deployments.map((d) => d.id);
+      const { data: runs } = await supabase
+        .from("runs")
+        .select("status, started_at, completed_at")
+        .in("deployment_id", depIds);
+
+      if (!runs?.length) return { avgDuration: null, successRate: null, totalRuns: 0 };
+
+      const completed = runs.filter((r) => r.started_at && r.completed_at);
+      const avgSeconds = completed.length > 0
+        ? completed.reduce((sum, r) => sum + (new Date(r.completed_at!).getTime() - new Date(r.started_at!).getTime()) / 1000, 0) / completed.length
+        : null;
+
+      const successful = runs.filter((r) => r.status === "success").length;
+      const successRate = runs.length > 0 ? Math.round((successful / runs.length) * 100) : null;
+
+      return { avgDuration: avgSeconds, successRate, totalRuns: runs.length };
+    },
+    enabled: !!agent,
+  });
+
   const handleRunNow = async () => {
     if (!activeDeployment) return;
     setRunning(true);
@@ -63,8 +94,9 @@ const AgentDetail = () => {
       } else {
         toast.success("Agent ran successfully!");
       }
-    } catch (err: any) {
-      toast.error(err.message || "Run failed");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Run failed";
+      toast.error(message);
     } finally {
       setRunning(false);
     }
@@ -93,6 +125,7 @@ const AgentDetail = () => {
 
   const Icon = iconMap[agent.icon_url ?? ""] ?? defaultAgentIcon;
   const credentials = agent.required_credentials ?? [];
+  const useCases = (agent as Record<string, unknown>).use_cases as string[] | null;
 
   return (
     <div className="bg-background min-h-screen">
@@ -148,9 +181,14 @@ const AgentDetail = () => {
                 <div>
                   <h3 className="font-medium mb-3">Use Cases</h3>
                   <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                    <li>Automate repetitive {agent.category.toLowerCase()} tasks</li>
-                    <li>Scale your operations without hiring</li>
-                    <li>Get results in minutes, not hours</li>
+                    {useCases && useCases.length > 0
+                      ? useCases.map((uc, i) => <li key={i}>{uc}</li>)
+                      : <>
+                          <li>Automate repetitive {agent.category.toLowerCase()} tasks</li>
+                          <li>Scale your operations without hiring</li>
+                          <li>Get results in minutes, not hours</li>
+                        </>
+                    }
                   </ul>
                 </div>
               </TabsContent>
@@ -180,8 +218,8 @@ const AgentDetail = () => {
                   {[
                     { icon: BarChart2, label: "Category", value: agent.category },
                     { icon: Star, label: "Cost", value: `${agent.base_credit_cost} credits/run` },
-                    { icon: Clock, label: "Avg Run Time", value: "~2 min" },
-                    { icon: CheckCircle, label: "Success Rate", value: "98.5%" },
+                    { icon: Clock, label: "Avg Run Time", value: agentStats?.avgDuration ? `${Math.round(agentStats.avgDuration)}s` : "No data" },
+                    { icon: CheckCircle, label: "Success Rate", value: agentStats?.successRate != null ? `${agentStats.successRate}%` : "No data" },
                     { icon: Users, label: "Deployments", value: String(agent.total_deployments) },
                     { icon: Calendar, label: "Last Updated", value: new Date(agent.updated_at).toLocaleDateString() },
                   ].map(({ icon: I, label, value }) => (
