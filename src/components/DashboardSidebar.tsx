@@ -75,7 +75,7 @@ const DashboardSidebar = () => {
 
       {/* Mobile bottom tab bar */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-sidebar border-t border-sidebar-border flex justify-around py-2">
-        {links.slice(0, 5).map((link) => {
+        {links.map((link) => {
           const active = link.href === "/dashboard"
             ? location.pathname === "/dashboard"
             : location.pathname.startsWith(link.href);

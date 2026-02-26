@@ -2,59 +2,59 @@ import { Link } from "react-router-dom";
 import { Twitter, Linkedin, Github, Youtube } from "lucide-react";
 import logo from "@/assets/logo.png";
 
-const footerSections = [
+type FooterLink = { label: string; href: string | null };
+
+const footerSections: { title: string; links: FooterLink[] }[] = [
   {
     title: "Product",
     links: [
       { label: "Marketplace", href: "/marketplace" },
       { label: "Pricing", href: "/pricing" },
       { label: "How It Works", href: "/#how-it-works" },
-      { label: "Changelog", href: "#" },
+      { label: "Changelog", href: null },
     ],
   },
   {
     title: "Resources",
     links: [
-      { label: "Documentation", href: "#" },
-      { label: "API Reference", href: "#" },
-      { label: "Blog", href: "#" },
-      { label: "Community", href: "#" },
+      { label: "Documentation", href: null },
+      { label: "API Reference", href: null },
+      { label: "Blog", href: null },
+      { label: "Community", href: null },
     ],
   },
   {
     title: "Company",
     links: [
-      { label: "About", href: "#" },
-      { label: "Careers", href: "#" },
-      { label: "Contact", href: "#" },
-      { label: "Partners", href: "#" },
+      { label: "About", href: null },
+      { label: "Careers", href: null },
+      { label: "Contact", href: null },
+      { label: "Partners", href: null },
     ],
   },
   {
     title: "Legal",
     links: [
-      { label: "Privacy Policy", href: "#" },
-      { label: "Terms of Service", href: "#" },
-      { label: "Cookie Policy", href: "#" },
-      { label: "Security", href: "#" },
+      { label: "Privacy Policy", href: null },
+      { label: "Terms of Service", href: null },
+      { label: "Cookie Policy", href: null },
+      { label: "Security", href: null },
     ],
   },
 ];
 
 const socialLinks = [
-  { icon: Twitter, href: "#", label: "Twitter" },
-  { icon: Linkedin, href: "#", label: "LinkedIn" },
-  { icon: Github, href: "#", label: "GitHub" },
-  { icon: Youtube, href: "#", label: "YouTube" },
+  { icon: Twitter, label: "Twitter" },
+  { icon: Linkedin, label: "LinkedIn" },
+  { icon: Github, label: "GitHub" },
+  { icon: Youtube, label: "YouTube" },
 ];
 
 const Footer = () => {
   return (
     <footer className="bg-sidebar text-sidebar-foreground">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-        {/* Top: logo + columns */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 lg:gap-12">
-          {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
               <img src={logo} alt="Autonomux" className="w-7 h-7" />
@@ -68,7 +68,6 @@ const Footer = () => {
             </p>
           </div>
 
-          {/* Link columns */}
           {footerSections.map((section) => (
             <div key={section.title}>
               <h4 className="text-sm font-medium mb-4 text-sidebar-foreground/90">
@@ -77,12 +76,18 @@ const Footer = () => {
               <ul className="space-y-2.5">
                 {section.links.map((link) => (
                   <li key={link.label}>
-                    <Link
-                      to={link.href}
-                      className="text-sm text-sidebar-foreground/50 hover:text-sidebar-foreground/80 transition-colors"
-                    >
-                      {link.label}
-                    </Link>
+                    {link.href ? (
+                      <Link
+                        to={link.href}
+                        className="text-sm text-sidebar-foreground/50 hover:text-sidebar-foreground/80 transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    ) : (
+                      <span className="text-sm text-sidebar-foreground/30 cursor-default">
+                        {link.label}
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -90,21 +95,19 @@ const Footer = () => {
           ))}
         </div>
 
-        {/* Bottom bar */}
         <div className="mt-12 pt-8 border-t border-sidebar-border flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-sidebar-foreground/40">
             © {new Date().getFullYear()} Autonomux. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
-            {socialLinks.map(({ icon: Icon, href, label }) => (
-              <a
+            {socialLinks.map(({ icon: Icon, label }) => (
+              <span
                 key={label}
-                href={href}
                 aria-label={label}
-                className="text-sidebar-foreground/40 hover:text-sidebar-foreground/70 transition-colors"
+                className="text-sidebar-foreground/30 cursor-default"
               >
                 <Icon size={18} />
-              </a>
+              </span>
             ))}
           </div>
         </div>
