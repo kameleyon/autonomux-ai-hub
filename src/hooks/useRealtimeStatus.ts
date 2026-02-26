@@ -6,8 +6,7 @@ export function useRealtimeStatus() {
 
   useEffect(() => {
     const channel = supabase
-      .channel("status-probe")
-      .on("postgres_changes", { event: "*", schema: "public", table: "runs" }, () => {})
+      .channel("status-heartbeat")
       .subscribe((s) => {
         if (s === "SUBSCRIBED") setStatus("connected");
         else if (s === "CHANNEL_ERROR" || s === "TIMED_OUT") setStatus("disconnected");

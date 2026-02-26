@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,18 +10,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import {
-  Star, Search, Rocket, Mail, BarChart2, Headphones, Database,
-  FileText, Share2, Mic, Eye, PenTool, Filter, X,
-} from "lucide-react";
-
-import type { LucideIcon } from "lucide-react";
-
-const iconMap: Record<string, LucideIcon> = {
-  mail: Mail, search: Search, "pen-tool": PenTool, "share-2": Share2,
-  headphones: Headphones, database: Database, "file-text": FileText,
-  "bar-chart-2": BarChart2, mic: Mic, eye: Eye,
-};
+import { Star, Search, Rocket, Filter, X } from "lucide-react";
+import { iconMap, defaultAgentIcon } from "@/lib/icons";
 
 const allCategories = ["Marketing", "Sales", "Support", "Data", "Content", "Email", "Social Media", "Productivity", "Finance"];
 
@@ -34,6 +24,14 @@ const Marketplace = () => {
     initialCategory ? [initialCategory] : []
   );
   const [showFilters, setShowFilters] = useState(false);
+
+  // Sync category from URL on subsequent navigations (Fix 21)
+  useEffect(() => {
+    const cat = searchParams.get("category");
+    if (cat) {
+      setSelectedCategories([cat]);
+    }
+  }, [searchParams]);
 
   const { data: agents, isLoading } = useQuery({
     queryKey: ["marketplace-agents"],
@@ -57,6 +55,8 @@ const Marketplace = () => {
     if (selectedCategories.length > 0) {
       list = list.filter((a) => selectedCategories.includes(a.category));
     }
+    // Copy before sorting to avoid mutating React Query cache (Fix 22)
+    list = [...list];
     if (sortBy === "popular") list.sort((a, b) => (b.total_deployments ?? 0) - (a.total_deployments ?? 0));
     else if (sortBy === "newest") list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     else if (sortBy === "price") list.sort((a, b) => a.base_credit_cost - b.base_credit_cost);
@@ -167,7 +167,7 @@ const Marketplace = () => {
             ) : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filtered.map((agent) => {
-                  const Icon = iconMap[agent.icon_url ?? ""] ?? Rocket;
+                  const Icon = iconMap[agent.icon_url ?? ""] ?? defaultAgentIcon;
                   return (
                     <Link key={agent.id} to={`/marketplace/${agent.slug}`}>
                       <Card className="cursor-pointer hover:-translate-y-0.5 h-full transition-all">

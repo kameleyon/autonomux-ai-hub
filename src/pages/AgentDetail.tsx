@@ -10,16 +10,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
   Star, ArrowLeft, Lock, Clock, CheckCircle, Users, Calendar, Rocket, Zap, Loader2,
-  Mail, Search, PenTool, Share2, Headphones, Database, FileText, BarChart2, Mic, Eye,
+  BarChart2,
 } from "lucide-react";
-
-import type { LucideIcon } from "lucide-react";
-
-const iconMap: Record<string, LucideIcon> = {
-  mail: Mail, search: Search, "pen-tool": PenTool, "share-2": Share2,
-  headphones: Headphones, database: Database, "file-text": FileText,
-  "bar-chart-2": BarChart2, mic: Mic, eye: Eye,
-};
+import { iconMap, defaultAgentIcon } from "@/lib/icons";
 
 const AgentDetail = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -98,7 +91,7 @@ const AgentDetail = () => {
     );
   }
 
-  const Icon = iconMap[agent.icon_url ?? ""] ?? Rocket;
+  const Icon = iconMap[agent.icon_url ?? ""] ?? defaultAgentIcon;
   const credentials = agent.required_credentials ?? [];
 
   return (

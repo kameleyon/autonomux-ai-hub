@@ -6,18 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import {
   Star, ArrowRight, Search, Settings, Rocket,
-  Mail, BarChart2, Headphones, Database, FileText,
-  Share2, Mic, Eye, PenTool, Megaphone, ShoppingCart, Code,
+  Mail, Headphones, Database,
+  Share2, PenTool, Megaphone, ShoppingCart, Code,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
-
-import type { LucideIcon } from "lucide-react";
-
-const iconMap: Record<string, LucideIcon> = {
-  mail: Mail, search: Search, "pen-tool": PenTool, "share-2": Share2,
-  headphones: Headphones, database: Database, "file-text": FileText,
-  "bar-chart-2": BarChart2, mic: Mic, eye: Eye,
-};
+import { iconMap, defaultAgentIcon } from "@/lib/icons";
 
 const categories = [
   { name: "Marketing", icon: Megaphone },
@@ -139,7 +132,7 @@ const Index = () => {
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {(agents ?? []).map((agent) => {
-              const Icon = iconMap[agent.icon_url ?? ""] ?? Rocket;
+              const Icon = iconMap[agent.icon_url ?? ""] ?? defaultAgentIcon;
               return (
                 <Link key={agent.id} to={`/marketplace/${agent.slug}`}>
                   <Card className="cursor-pointer hover:-translate-y-0.5 h-full">
