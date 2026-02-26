@@ -1,26 +1,39 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRealtimeProfile } from "@/hooks/useRealtimeProfile";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Coins, Check } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Coins, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 
 const creditPacks = [
-  { credits: 100, price: 10, label: "Starter" },
-  { credits: 500, price: 45, label: "Growth", popular: true },
-  { credits: 2000, price: 160, label: "Scale" },
+  { credits: 100, price: 10, label: "Starter", key: "starter" },
+  { credits: 500, price: 45, label: "Growth", key: "growth", popular: true },
+  { credits: 2000, price: 160, label: "Scale", key: "scale" },
 ];
 
 const Billing = () => {
   const { user } = useAuth();
   useRealtimeProfile(user?.id);
   const [selected, setSelected] = useState<number | null>(null);
+  const [purchasing, setPurchasing] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("success") === "true") {
+      toast.success("Credits purchased successfully! Your balance will update shortly.");
+      setSearchParams({}, { replace: true });
+    } else if (searchParams.get("canceled") === "true") {
+      toast.info("Purchase canceled.");
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -41,6 +54,24 @@ const Billing = () => {
   });
 
   const tierLabel = (profile?.plan_tier ?? "free").charAt(0).toUpperCase() + (profile?.plan_tier ?? "free").slice(1);
+
+  const handlePurchase = async () => {
+    if (selected === null) return;
+    setPurchasing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: { packKey: creditPacks[selected].key },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to start checkout");
+    } finally {
+      setPurchasing(false);
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -88,8 +119,9 @@ const Billing = () => {
                     </Card>
                   ))}
                 </div>
-                <Button variant="gradient" disabled={selected === null} className="w-full">
-                  Purchase {selected !== null ? `$${creditPacks[selected].price}` : ""}
+                <Button variant="gradient" disabled={selected === null || purchasing} className="w-full" onClick={handlePurchase}>
+                  {purchasing ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
+                  {purchasing ? "Redirecting…" : `Purchase ${selected !== null ? `$${creditPacks[selected].price}` : ""}`}
                 </Button>
               </DialogContent>
             </Dialog>
