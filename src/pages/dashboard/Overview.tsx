@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Bot, Zap, Coins, TrendingUp, Plus, AlertTriangle, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
 
 const StatCard = ({ label, value, icon: Icon, suffix = "" }: { label: string; value: number; icon: any; suffix?: string }) => {
   const { value: animated, ref } = useCountUp(value);
@@ -146,7 +147,9 @@ const Overview = () => {
                       <p className="text-sm font-medium">{(dep as any)?.agents?.name ?? "Agent"}</p>
                       <p className="text-xs text-muted-foreground">{new Date(run.created_at).toLocaleString()}</p>
                       {run.status === "success" && run.output_summary && (
-                        <p className="text-xs text-muted-foreground mt-1 truncate">{run.output_summary.substring(0, 100)}...</p>
+                        <div className="text-xs text-muted-foreground mt-1 truncate prose prose-xs max-w-none dark:prose-invert">
+                          <ReactMarkdown>{run.output_summary.substring(0, 100) + "..."}</ReactMarkdown>
+                        </div>
                       )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">

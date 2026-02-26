@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { differenceInSeconds, differenceInMinutes } from "date-fns";
+import ReactMarkdown from "react-markdown";
 
 const statusStyles: Record<string, string> = {
   success: "bg-success text-success-foreground",
@@ -111,8 +112,8 @@ const RunHistory = () => {
                             {run.output_summary && (
                               <div>
                                 <span className="font-medium">Output:</span>
-                                <div className="mt-1 whitespace-pre-wrap bg-background p-3 rounded-lg border text-xs max-h-96 overflow-y-auto">
-                                  {run.output_summary}
+                                <div className="mt-1 bg-background p-3 rounded-lg border max-h-[500px] overflow-y-auto prose prose-sm max-w-none dark:prose-invert">
+                                  <ReactMarkdown>{run.output_summary}</ReactMarkdown>
                                 </div>
                               </div>
                             )}
