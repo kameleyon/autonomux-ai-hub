@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import confetti from "canvas-confetti";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -39,6 +40,17 @@ const DeployWizard = () => {
     },
     enabled: !!agentId,
   });
+
+  useEffect(() => {
+    if (deployed) {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ["#E81E25", "#F7941D", "#10B981"],
+      });
+    }
+  }, [deployed]);
 
   if (isLoading) {
     return (
@@ -249,6 +261,14 @@ const DeployWizard = () => {
                         value={credentials[cred] ?? ""}
                         onChange={(e) => setCredentials({ ...credentials, [cred]: e.target.value })}
                       />
+                      <a
+                        href={`https://www.google.com/search?q=how+to+get+${encodeURIComponent(cred.replace(/_/g, " "))}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline"
+                      >
+                        How to get this →
+                      </a>
                     </div>
                   ))}
                 </>
