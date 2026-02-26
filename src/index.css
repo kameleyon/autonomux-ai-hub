@@ -20,7 +20,7 @@
     --primary: 358 81% 51%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 225 25% 96%;
+    --secondary: 220 20% 92%;
     --secondary-foreground: 240 22% 15%;
 
     --muted: 225 25% 96%;
@@ -57,7 +57,7 @@
     --gradient-to: 32 93% 54%;
 
     --accent-tag-bg: 30 90% 95%;
-    --accent-tag-text: 32 93% 54%;
+    --accent-tag-text: 25 85% 38%;
   }
 
   .dark {
