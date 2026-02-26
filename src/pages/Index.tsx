@@ -81,7 +81,7 @@ const Index = () => {
 
           {/* Glowing agent card mockup */}
           <div className="flex-1 flex justify-center">
-            <Card className="w-96 bg-card/10 backdrop-blur border-sidebar-border shadow-sm">
+            <Card className="w-96 bg-sidebar-accent backdrop-blur border-sidebar-border shadow-sm">
               <CardContent className="p-6 space-y-4">
                 <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white">
                   <Rocket size={28} />
