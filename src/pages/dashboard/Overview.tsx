@@ -41,15 +41,15 @@ const StatCard = ({
   const { value: animated, ref } = useCountUp(value);
   return (
     <div ref={ref}>
-      <Card className="hover:-translate-y-0.5 transition-transform">
-        <CardContent className="p-5 flex items-start gap-4">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white shrink-0">
-            <Icon size={20} />
+      <Card>
+        <CardContent className="p-4 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white shrink-0">
+            <Icon size={16} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-2xl font-medium">{animated}{suffix}</p>
-            <p className="text-sm text-muted-foreground">{label}</p>
-            {sublabel && <p className="text-xs text-muted-foreground/70">{sublabel}</p>}
+            <p className="text-xl font-medium leading-tight">{animated}{suffix}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+            {sublabel && <p className="text-[11px] text-muted-foreground/60 mt-0.5">{sublabel}</p>}
             {children}
           </div>
         </CardContent>
@@ -115,7 +115,6 @@ const Overview = () => {
   const creditColor = creditPercent > 50 ? "bg-success" : creditPercent > 20 ? "bg-warning" : "bg-destructive";
 
   const agentLimit = planLimit;
-  const agentLimitLabel = agentLimit ? `${activeAgents} of ${agentLimit}` : `${activeAgents}`;
 
   const handleRunAgain = async (deploymentId: string) => {
     try {
@@ -143,22 +142,29 @@ const Overview = () => {
     }
   };
 
+  const statusColors: Record<string, string> = {
+    success: "bg-success text-success-foreground",
+    failed: "bg-destructive text-destructive-foreground",
+    running: "bg-primary text-primary-foreground",
+    queued: "bg-muted text-muted-foreground",
+  };
+
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       {creditsBalance <= 0 && (
-        <div className="flex items-center gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/20">
-          <XCircle size={20} className="text-destructive shrink-0" />
-          <p className="text-sm text-destructive font-medium">🚫 No credits remaining. Buy credits to run your agents.</p>
-          <Button variant="outline" size="sm" asChild className="ml-auto shrink-0">
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+          <XCircle size={16} className="text-destructive shrink-0" />
+          <p className="text-xs text-destructive">No credits remaining. Buy credits to run your agents.</p>
+          <Button variant="outline" size="sm" asChild className="ml-auto shrink-0 text-xs h-7">
             <Link to="/dashboard/billing">Buy Credits</Link>
           </Button>
         </div>
       )}
       {creditsBalance > 0 && creditsBalance < 10 && (
-        <div className="flex items-center gap-3 p-4 rounded-lg bg-warning/10 border border-warning/20">
-          <AlertTriangle size={20} className="text-warning shrink-0" />
-          <p className="text-sm text-foreground">⚠️ Low credits! You have {creditsBalance} credits remaining.</p>
-          <Button variant="outline" size="sm" asChild className="ml-auto shrink-0">
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20">
+          <AlertTriangle size={16} className="text-warning shrink-0" />
+          <p className="text-xs text-foreground">{creditsBalance} credits remaining — running low.</p>
+          <Button variant="outline" size="sm" asChild className="ml-auto shrink-0 text-xs h-7">
             <Link to="/dashboard/billing">Buy Credits</Link>
           </Button>
         </div>
@@ -166,72 +172,58 @@ const Overview = () => {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-medium font-display">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Welcome back, {profile?.display_name ?? "there"}!</p>
+          <h1 className="text-lg font-medium">Dashboard</h1>
+          <p className="text-xs text-muted-foreground">Welcome back, {profile?.display_name ?? "there"}!</p>
         </div>
-        <Button variant="gradient" asChild>
-          <Link to="/marketplace"><Plus size={16} className="mr-2" />Deploy New Agent</Link>
+        <Button variant="gradient" size="sm" asChild>
+          <Link to="/marketplace"><Plus size={14} className="mr-1.5" />Deploy New Agent</Link>
         </Button>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
         <StatCard
           label="Active Agents"
           value={activeAgents}
           icon={Bot}
-          sublabel={agentLimit ? `Limit: ${agentLimit} (${planTier})` : "Unlimited"}
+          sublabel={agentLimit ? `Limit: ${agentLimit} (${planTier})` : undefined}
         />
         <StatCard label="Scheduled" value={scheduledAgents} icon={Clock} />
-        <StatCard
-          label="Runs This Month"
-          value={totalRuns}
-          icon={Zap}
-        />
-        <StatCard
-          label="Credits Remaining"
-          value={creditsBalance}
-          icon={Coins}
-        >
-          <div className="mt-2">
-            <Progress value={creditPercent} className="h-1.5" indicatorClassName={creditColor} />
+        <StatCard label="Runs This Month" value={totalRuns} icon={Zap} />
+        <StatCard label="Credits Remaining" value={creditsBalance} icon={Coins}>
+          <div className="mt-1.5">
+            <Progress value={creditPercent} className="h-1" indicatorClassName={creditColor} />
           </div>
         </StatCard>
         <StatCard label="Success Rate" value={successRate} icon={TrendingUp} suffix="%" />
       </div>
 
       <div>
-        <h2 className="text-lg font-medium mb-4">Recent Activity</h2>
+        <h2 className="text-sm font-medium text-muted-foreground mb-3">Recent Activity</h2>
         {(runs ?? []).length === 0 ? (
-          <Card><CardContent className="p-6 text-center text-muted-foreground">No runs yet. Deploy an agent to get started!</CardContent></Card>
+          <Card><CardContent className="p-8 text-center text-xs text-muted-foreground">No runs yet. Deploy an agent to get started!</CardContent></Card>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {(runs ?? []).slice(0, 5).map((run) => {
               const dep = (deployments ?? []).find((d) => d.id === run.deployment_id);
-              const statusColors: Record<string, string> = {
-                success: "bg-success text-success-foreground",
-                failed: "bg-destructive text-destructive-foreground",
-                running: "bg-primary text-primary-foreground",
-                queued: "bg-muted text-muted-foreground",
-              };
               return (
                 <Card key={run.id}>
-                  <CardContent className="p-4 flex items-center justify-between gap-4">
+                  <CardContent className="p-3 flex items-center justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium">{dep?.agents?.name ?? "Agent"}</p>
-                      <p className="text-xs text-muted-foreground">{new Date(run.created_at).toLocaleString()}</p>
+                      <p className="text-[11px] text-muted-foreground">{new Date(run.created_at).toLocaleString()}</p>
                       {run.status === "success" && run.output_summary && (
-                        <div className="text-xs text-muted-foreground mt-1 truncate prose prose-xs max-w-none dark:prose-invert">
+                        <div className="text-[11px] text-muted-foreground/80 mt-1 line-clamp-2 prose prose-xs max-w-none dark:prose-invert [&_*]:text-[11px] [&_*]:leading-relaxed [&_*]:m-0">
                           <ReactMarkdown allowedElements={ALLOWED_MARKDOWN_ELEMENTS}>
-                            {run.output_summary.substring(0, 100) + "..."}
+                            {run.output_summary.substring(0, 120) + "..."}
                           </ReactMarkdown>
                         </div>
                       )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <Badge className={statusColors[run.status] ?? ""}>{run.status}</Badge>
+                      <Badge className={`text-[10px] px-2 py-0.5 ${statusColors[run.status] ?? ""}`}>{run.status}</Badge>
                       {dep && dep.status === "active" && (
-                        <Button variant="ghost" size="sm" onClick={() => handleRunAgain(dep.id)}>
-                          <Zap size={14} className="mr-1" /> Run Again
+                        <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={() => handleRunAgain(dep.id)}>
+                          <Zap size={12} className="mr-1" /> Run Again
                         </Button>
                       )}
                     </div>
