@@ -1,0 +1,13 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E81E25"/>
+      <stop offset="100%" stop-color="#F7941D"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#0F0F1A"/>
+  <rect x="0" y="610" width="1200" height="20" fill="url(#accent)"/>
+  <text x="600" y="260" text-anchor="middle" font-family="system-ui, sans-serif" font-size="80" font-weight="500" fill="url(#accent)">🦎 Autonomux</text>
+  <text x="600" y="370" text-anchor="middle" font-family="system-ui, sans-serif" font-size="36" font-weight="400" fill="#FFFFFF">Your AI Workforce, One Click Away</text>
+  <text x="600" y="440" text-anchor="middle" font-family="system-ui, sans-serif" font-size="24" font-weight="400" fill="#888888">Deploy AI agents to automate your workflows in one click.</text>
+</svg>
