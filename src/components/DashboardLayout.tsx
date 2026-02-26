@@ -1,18 +1,22 @@
 import { Outlet } from "react-router-dom";
-import Navbar from "./Navbar";
 import DashboardSidebar from "./DashboardSidebar";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 
 const DashboardLayout = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
-      <div className="flex flex-1 pt-16">
+    <SidebarProvider>
+      <div className="flex min-h-svh w-full">
         <DashboardSidebar />
-        <main className="flex-1 p-4 md:p-8 pb-20 md:pb-8 overflow-auto">
-          <Outlet />
-        </main>
+        <SidebarInset>
+          <header className="flex h-12 items-center border-b border-border px-4 shrink-0">
+            <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+          </header>
+          <main className="flex-1 p-4 md:p-8 overflow-auto">
+            <Outlet />
+          </main>
+        </SidebarInset>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 

@@ -1,11 +1,35 @@
-import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { useRealtimeStatus } from "@/hooks/useRealtimeStatus";
 import {
-  LayoutDashboard, Bot, History, CreditCard, KeyRound, Settings,
+  LayoutDashboard, Bot, History, CreditCard, KeyRound, Settings, LogOut, Sun, Moon, ChevronUp,
 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import { useState, useEffect } from "react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  SidebarSeparator,
+  useSidebar,
+} from "@/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import logo from "@/assets/logo.png";
 
 const links = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -18,84 +42,123 @@ const links = [
 
 const statusConfig = {
   connected: { color: "bg-success", label: "Live" },
-  reconnecting: { color: "bg-warning", label: "Reconnecting..." },
+  reconnecting: { color: "bg-warning animate-pulse", label: "Reconnecting..." },
   disconnected: { color: "bg-destructive", label: "Disconnected" },
 } as const;
 
 const DashboardSidebar = () => {
-  const { user } = useAuth();
-  const location = useLocation();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const realtimeStatus = useRealtimeStatus();
+  const { state } = useSidebar();
+  const collapsed = state === "collapsed";
+
+  const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", dark);
+    localStorage.setItem("autonomux-theme", dark ? "dark" : "light");
+  }, [dark]);
+
+  const initials = user?.email?.charAt(0).toUpperCase() ?? "U";
+  const displayName = user?.user_metadata?.full_name ?? user?.email?.split("@")[0] ?? "User";
 
   return (
-    <>
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex flex-col w-60 bg-sidebar text-sidebar-foreground border-r border-sidebar-border shrink-0">
-        <div className="p-4 border-b border-sidebar-border">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-sm font-medium">
-              {user?.email?.charAt(0).toUpperCase() ?? "U"}
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium truncate">
-                {user?.user_metadata?.full_name ?? user?.email?.split("@")[0] ?? "User"}
-              </p>
-              <p className="text-xs text-sidebar-foreground/50 truncate">{user?.email}</p>
-            </div>
-          </div>
+    <Sidebar collapsible="icon">
+      {/* Brand */}
+      <SidebarHeader className="p-3">
+        <div className="flex items-center gap-2.5 overflow-hidden">
+          <img src={logo} alt="Autonomux" className="w-7 h-7 shrink-0" />
+          {!collapsed && (
+            <span className="text-gradient text-lg font-medium font-display truncate">
+              Autonomux
+            </span>
+          )}
         </div>
-        <nav className="flex-1 p-2 space-y-0.5">
-          {links.map((link) => (
-            <NavLink
-              key={link.href}
-              to={link.href}
-              end={link.href === "/dashboard"}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-              activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
-            >
-              <link.icon size={18} />
-              <span>{link.label}</span>
-            </NavLink>
-          ))}
-        </nav>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="p-4 border-t border-sidebar-border flex items-center gap-2 text-xs text-sidebar-foreground/50">
-                <span className={`w-2 h-2 rounded-full ${statusConfig[realtimeStatus].color} ${realtimeStatus === "reconnecting" ? "animate-pulse" : ""}`} />
-                {statusConfig[realtimeStatus].label}
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>Real-time connection status</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </aside>
+      </SidebarHeader>
 
-      {/* Mobile bottom tab bar */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-sidebar border-t border-sidebar-border flex justify-around py-2">
-        {links.map((link) => {
-          const active = link.href === "/dashboard"
-            ? location.pathname === "/dashboard"
-            : location.pathname.startsWith(link.href);
-          return (
-            <NavLink
-              key={link.href}
-              to={link.href}
-              end={link.href === "/dashboard"}
-              className={`flex flex-col items-center gap-0.5 text-[10px] py-1 px-2 ${
-                active ? "text-accent" : "text-sidebar-foreground/50"
-              }`}
-              activeClassName=""
-            >
-              <link.icon size={20} />
-              <span>{link.label}</span>
-            </NavLink>
-          );
-        })}
-      </nav>
-    </>
+      <SidebarSeparator />
+
+      {/* Navigation */}
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {links.map((link) => (
+                <SidebarMenuItem key={link.href}>
+                  <SidebarMenuButton asChild tooltip={link.label}>
+                    <NavLink
+                      to={link.href}
+                      end={link.href === "/dashboard"}
+                      className="hover:bg-sidebar-accent"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    >
+                      <link.icon className="shrink-0" />
+                      <span>{link.label}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      {/* Footer: status + user menu */}
+      <SidebarFooter>
+        {/* Realtime status */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-2 px-2 py-1 text-xs text-sidebar-foreground/50">
+              <span className={`w-2 h-2 rounded-full shrink-0 ${statusConfig[realtimeStatus].color}`} />
+              {!collapsed && <span>{statusConfig[realtimeStatus].label}</span>}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="right">Real-time connection status</TooltipContent>
+        </Tooltip>
+
+        <SidebarSeparator />
+
+        {/* User dropdown */}
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-xs font-medium shrink-0">
+                    {initials}
+                  </div>
+                  {!collapsed && (
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="text-sm font-medium truncate leading-tight">{displayName}</p>
+                      <p className="text-xs text-sidebar-foreground/50 truncate leading-tight">{user?.email}</p>
+                    </div>
+                  )}
+                  {!collapsed && <ChevronUp className="ml-auto shrink-0 opacity-50" />}
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="start" className="w-56">
+                <DropdownMenuItem onClick={() => setDark(!dark)}>
+                  {dark ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
+                  {dark ? "Light mode" : "Dark mode"}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={async () => { await signOut(); navigate("/"); }}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+
+      <SidebarRail />
+    </Sidebar>
   );
 };
 
