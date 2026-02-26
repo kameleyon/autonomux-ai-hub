@@ -195,6 +195,14 @@ Deno.serve(async (req) => {
             next_run_at: null,
           })
           .eq("id", deployment_id);
+
+        // Insert notification
+        await adminClient.from("notifications").insert({
+          user_id: userId,
+          type: "error",
+          title: "Scheduled run failed — insufficient credits",
+          message: `Your scheduled agent "${agent.name}" was paused because you don't have enough credits. You need ${creditCost} credits but have ${profile?.credits_balance ?? 0}. Buy credits to resume.`,
+        });
       }
 
       return new Response(

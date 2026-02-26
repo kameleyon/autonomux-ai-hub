@@ -9,8 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Pause, Play, Trash2, Zap, Loader2, Clock } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { Pause, Play, Trash2, Zap, Loader2, Clock, Timer } from "lucide-react";
+import { formatDistanceToNow, differenceInMinutes, differenceInHours, isPast } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
 import { ScheduleDialog } from "@/components/ScheduleDialog";
 
@@ -23,14 +23,25 @@ const statusStyles: Record<string, string> = {
   stopped: "bg-muted text-muted-foreground",
 };
 
-const INTERVAL_LABELS: Record<string, string> = {
-  every_15_min: "Every 15 min",
-  every_hour: "Hourly",
-  every_6_hours: "Every 6h",
-  every_12_hours: "Every 12h",
-  daily: "Daily",
-  weekly: "Weekly",
+const INTERVAL_LABELS: Record<string, { label: string; emoji: string }> = {
+  every_15_min: { label: "Every 15 min", emoji: "⏱️" },
+  every_hour: { label: "Hourly", emoji: "⏱️" },
+  every_6_hours: { label: "Every 6h", emoji: "⏱️" },
+  every_12_hours: { label: "Every 12h", emoji: "⏱️" },
+  daily: { label: "Daily", emoji: "📅" },
+  weekly: { label: "Weekly", emoji: "📆" },
 };
+
+function formatCountdown(nextRunAt: string | null): { text: string; color: string } {
+  if (!nextRunAt) return { text: "—", color: "text-muted-foreground" };
+  const next = new Date(nextRunAt);
+  if (isPast(next)) return { text: "Running soon…", color: "text-warning" };
+  const mins = differenceInMinutes(next, new Date());
+  const hrs = differenceInHours(next, new Date());
+  if (mins < 60) return { text: `Next in ${mins}m`, color: "text-success" };
+  if (hrs < 24) return { text: `Next in ${hrs}h ${mins % 60}m`, color: "text-success" };
+  return { text: formatDistanceToNow(next, { addSuffix: true }), color: "text-success" };
+}
 
 const MyAgents = () => {
   const { user } = useAuth();
@@ -39,6 +50,15 @@ const MyAgents = () => {
   useRealtimeDeployments(user?.id);
   const [runningId, setRunningId] = useState<string | null>(null);
   const [scheduleDeployment, setScheduleDeployment] = useState<any | null>(null);
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("credits_balance").eq("user_id", user!.id).single();
+      return data;
+    },
+    enabled: !!user,
+  });
 
   const { data: deployments, isLoading } = useQuery({
     queryKey: ["my-deployments", user?.id],
@@ -75,7 +95,7 @@ const MyAgents = () => {
     },
   });
 
-  const handleRun = async (deploymentId: string) => {
+  const handleRun = async (deploymentId: string, creditCost: number) => {
     setRunningId(deploymentId);
     try {
       const { data, error } = await supabase.functions.invoke("run-agent", {
@@ -85,9 +105,12 @@ const MyAgents = () => {
         toast.error(error.message || "Run failed");
       } else if (data?.error) {
         if (data.error === "Insufficient credits") {
-          toast.error("Insufficient credits");
+          const balance = profile?.credits_balance ?? 0;
+          toast.error(`You need ${creditCost} credits but only have ${balance}.`, {
+            action: { label: "Buy Credits", onClick: () => window.location.href = "/dashboard/billing" },
+          });
         } else {
-          toast.error(data.error);
+          toast.error(typeof data.error === "string" ? data.error.substring(0, 100) : "Run failed");
         }
       } else {
         toast.success("Agent ran successfully!");
@@ -120,6 +143,7 @@ const MyAgents = () => {
                 <TableHead>Agent</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Schedule</TableHead>
+                <TableHead>Next Run</TableHead>
                 <TableHead>Last Run</TableHead>
                 <TableHead>Credits/Run</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -128,6 +152,8 @@ const MyAgents = () => {
             <TableBody>
               {(deployments ?? []).map((dep) => {
                 const d = dep as any;
+                const countdown = d.schedule_enabled ? formatCountdown(d.next_run_at) : null;
+                const intervalInfo = INTERVAL_LABELS[d.schedule_interval] ?? null;
                 return (
                   <TableRow key={dep.id}>
                     <TableCell className="font-medium">{d.agents?.name ?? "—"}</TableCell>
@@ -135,13 +161,22 @@ const MyAgents = () => {
                       <Badge className={statusStyles[dep.status] ?? ""}>{dep.status}</Badge>
                     </TableCell>
                     <TableCell className="text-sm">
-                      {d.schedule_enabled ? (
-                        <span className="flex items-center gap-1.5 text-success">
-                          <Clock size={14} />
-                          {INTERVAL_LABELS[d.schedule_interval] ?? d.schedule_interval}
-                        </span>
+                      {d.schedule_enabled && intervalInfo ? (
+                        <Badge variant="outline" className="gap-1 font-normal">
+                          <span>{intervalInfo.emoji}</span> {intervalInfo.label}
+                        </Badge>
                       ) : (
                         <span className="text-muted-foreground">Not scheduled</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {countdown ? (
+                        <span className={`flex items-center gap-1 ${countdown.color}`}>
+                          <Timer size={13} />
+                          {countdown.text}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
@@ -155,7 +190,7 @@ const MyAgents = () => {
                         variant="ghost"
                         size="icon"
                         disabled={dep.status !== "active" || runningId === dep.id}
-                        onClick={() => handleRun(dep.id)}
+                        onClick={() => handleRun(dep.id, d.agents?.base_credit_cost ?? 1)}
                         title="Run agent"
                       >
                         {runningId === dep.id ? (
