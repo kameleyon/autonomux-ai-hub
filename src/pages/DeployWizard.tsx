@@ -15,7 +15,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { CheckCircle, ArrowLeft, ArrowRight, Lock, Shield } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { encryptCredential } from "@/lib/credentials";
+
+const TEXTAREA_FIELDS = ["email_content", "input_text", "knowledge_base", "code", "transcript", "rules"];
 
 const DeployWizard = () => {
   const { agentId } = useParams<{ agentId: string }>();
@@ -218,6 +221,13 @@ const DeployWizard = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                    ) : TEXTAREA_FIELDS.includes(field.name) ? (
+                      <Textarea
+                        placeholder={String(field.default ?? "")}
+                        value={config[field.name] ?? ""}
+                        onChange={(e) => setConfig({ ...config, [field.name]: e.target.value })}
+                        className="min-h-[120px]"
+                      />
                     ) : (
                       <Input
                         placeholder={String(field.default ?? "")}

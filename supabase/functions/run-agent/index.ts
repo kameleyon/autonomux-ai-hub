@@ -11,8 +11,8 @@ function getPrompt(category: string, slug: string, config: Record<string, any>):
 
   if (category === "Email" || category === "Email Automation" || slug === "email-auto-responder") {
     return {
-      system: "You are an email auto-responder agent. Generate professional email replies based on the user's rules and preferences.",
-      user: `Generate a sample email response with these settings:\nTone: ${config.tone || "Professional"}\nLength: ${config.response_length || "Medium"}\nRules: ${config.rules || "Be polite and helpful"}`,
+      system: "You are a professional email assistant. Read the incoming email and draft a reply that matches the specified tone and rules. Output ONLY the reply body — no subject line, no explanations, no 'Here\u2019s a draft' preamble. Write it exactly as it should be sent.",
+      user: `Tone: ${config.tone || "Professional"}\nResponse length: ${config.response_length || "Medium (1 paragraph)"}\nMy rules: ${config.rules || "Be polite, address all points raised, sign off with best regards"}\n---\nIncoming email to reply to:\n${config.email_content || "(no email provided)"}\n---\nDraft a reply to this email.`,
     };
   }
 
