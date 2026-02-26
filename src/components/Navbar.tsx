@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Menu, X, Sun, Moon, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { NotificationBell } from "@/components/NotificationBell";
 import logo from "@/assets/logo.png";
 
 const navLinks = [
@@ -73,6 +74,7 @@ const Navbar = () => {
             </Button>
             {user ? (
               <>
+                <NotificationBell />
                 <Button variant="gradient" size="sm" asChild>
                   <Link to="/dashboard">Dashboard</Link>
                 </Button>

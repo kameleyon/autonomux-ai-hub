@@ -8,11 +8,32 @@ import { useCountUp } from "@/hooks/useCountUp";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Bot, Zap, Coins, TrendingUp, Plus, AlertTriangle, XCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 
-const StatCard = ({ label, value, icon: Icon, suffix = "" }: { label: string; value: number; icon: any; suffix?: string }) => {
+const PLAN_LIMITS: Record<string, number | null> = {
+  free: 3,
+  pro: null,
+  business: null,
+};
+
+const StatCard = ({
+  label,
+  value,
+  icon: Icon,
+  suffix = "",
+  sublabel,
+  children,
+}: {
+  label: string;
+  value: number;
+  icon: any;
+  suffix?: string;
+  sublabel?: string;
+  children?: React.ReactNode;
+}) => {
   const { value: animated, ref } = useCountUp(value);
   return (
     <div ref={ref}>
@@ -21,9 +42,11 @@ const StatCard = ({ label, value, icon: Icon, suffix = "" }: { label: string; va
           <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white shrink-0">
             <Icon size={20} />
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-2xl font-medium">{animated}{suffix}</p>
             <p className="text-sm text-muted-foreground">{label}</p>
+            {sublabel && <p className="text-xs text-muted-foreground/70">{sublabel}</p>}
+            {children}
           </div>
         </CardContent>
       </Card>
@@ -60,7 +83,16 @@ const Overview = () => {
     queryFn: async () => {
       const depIds = (deployments ?? []).map((d) => d.id);
       if (depIds.length === 0) return [];
-      const { data } = await supabase.from("runs").select("*").in("deployment_id", depIds).order("created_at", { ascending: false }).limit(20);
+      // Get runs from this month only
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      const { data } = await supabase
+        .from("runs")
+        .select("*")
+        .in("deployment_id", depIds)
+        .gte("created_at", startOfMonth.toISOString())
+        .order("created_at", { ascending: false });
       return data ?? [];
     },
     enabled: !!deployments,
@@ -73,6 +105,16 @@ const Overview = () => {
   const successRate = totalRuns > 0 ? Math.round((successRuns / totalRuns) * 100) : 0;
   const creditsBalance = profile?.credits_balance ?? 0;
 
+  // Plan-based credit progress
+  const planTier = profile?.plan_tier ?? "free";
+  const planLimit = PLAN_LIMITS[planTier];
+  const planMaxCredits = planTier === "free" ? 25 : planTier === "pro" ? 200 : 1000;
+  const creditPercent = Math.min(100, Math.round((creditsBalance / planMaxCredits) * 100));
+  const creditColor = creditPercent > 50 ? "bg-success" : creditPercent > 20 ? "bg-warning" : "bg-destructive";
+
+  const agentLimit = planLimit;
+  const agentLimitLabel = agentLimit ? `${activeAgents} of ${agentLimit}` : `${activeAgents}`;
+
   const handleRunAgain = async (deploymentId: string) => {
     try {
       const { data, error } = await supabase.functions.invoke("run-agent", {
@@ -81,7 +123,13 @@ const Overview = () => {
       if (error) {
         toast.error(error.message || "Run failed");
       } else if (data?.error) {
-        toast.error(data.error);
+        if (data.error === "Insufficient credits") {
+          toast.error(`You don't have enough credits. You need credits but only have ${creditsBalance}.`, {
+            action: { label: "Buy Credits", onClick: () => window.location.href = "/dashboard/billing" },
+          });
+        } else {
+          toast.error(data.error);
+        }
       } else {
         toast.success("Agent ran successfully!");
         qc.invalidateQueries({ queryKey: ["my-runs-overview"] });
@@ -125,10 +173,28 @@ const Overview = () => {
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatCard label="Active Agents" value={activeAgents} icon={Bot} />
+        <StatCard
+          label="Active Agents"
+          value={activeAgents}
+          icon={Bot}
+          sublabel={agentLimit ? `Limit: ${agentLimit} (${planTier})` : "Unlimited"}
+        />
         <StatCard label="Scheduled" value={scheduledAgents} icon={Clock} />
-        <StatCard label="Total Runs" value={totalRuns} icon={Zap} />
-        <StatCard label="Credits Remaining" value={creditsBalance} icon={Coins} />
+        <StatCard
+          label="Total Runs"
+          value={totalRuns}
+          icon={Zap}
+          sublabel="This month"
+        />
+        <StatCard
+          label="Credits Remaining"
+          value={creditsBalance}
+          icon={Coins}
+        >
+          <div className="mt-2">
+            <Progress value={creditPercent} className="h-1.5" indicatorClassName={creditColor} />
+          </div>
+        </StatCard>
         <StatCard label="Success Rate" value={successRate} icon={TrendingUp} suffix="%" />
       </div>
 
