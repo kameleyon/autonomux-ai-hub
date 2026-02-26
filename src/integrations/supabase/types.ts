@@ -32,6 +32,7 @@ export type Database = {
           slug: string
           total_deployments: number | null
           updated_at: string
+          use_cases: string[] | null
           version: string | null
         }
         Insert: {
@@ -51,6 +52,7 @@ export type Database = {
           slug: string
           total_deployments?: number | null
           updated_at?: string
+          use_cases?: string[] | null
           version?: string | null
         }
         Update: {
@@ -70,6 +72,7 @@ export type Database = {
           slug?: string
           total_deployments?: number | null
           updated_at?: string
+          use_cases?: string[] | null
           version?: string | null
         }
         Relationships: []
