@@ -43,40 +43,33 @@ Deno.serve(async (req) => {
       });
     }
 
+    // FIX 2: Verify caller matches the user_id being deducted
+    const callerId = claimsData.claims.sub;
+    if (user_id !== callerId) {
+      return new Response(JSON.stringify({ error: "Forbidden — cannot deduct credits for another user" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Use service role to bypass RLS
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Get current balance
-    const { data: profile, error: profileErr } = await adminClient
-      .from("profiles")
-      .select("credits_balance")
-      .eq("user_id", user_id)
-      .single();
+    // FIX 3: Atomic credit deduction
+    const { data: newBalance, error: deductErr } = await adminClient.rpc("deduct_credits", {
+      p_user_id: user_id,
+      p_amount: credits,
+    });
 
-    if (profileErr || !profile) {
-      return new Response(JSON.stringify({ error: "Profile not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (profile.credits_balance < credits) {
+    if (deductErr || newBalance === -1 || newBalance === null) {
       return new Response(
-        JSON.stringify({ error: "Insufficient credits", balance: profile.credits_balance }),
+        JSON.stringify({ error: "Insufficient credits", balance: 0 }),
         { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    const newBalance = profile.credits_balance - credits;
-
-    // Deduct
-    await adminClient
-      .from("profiles")
-      .update({ credits_balance: newBalance })
-      .eq("user_id", user_id);
 
     // Log transaction
     await adminClient.from("transactions").insert({

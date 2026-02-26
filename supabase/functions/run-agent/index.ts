@@ -167,14 +167,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Deduct credits
-    const { data: profile } = await adminClient
-      .from("profiles")
-      .select("credits_balance")
-      .eq("user_id", userId)
-      .single();
+    // Atomic credit deduction
+    const { data: newBalance, error: deductErr } = await adminClient.rpc("deduct_credits", {
+      p_user_id: userId,
+      p_amount: creditCost,
+    });
 
-    if (!profile || profile.credits_balance < creditCost) {
+    if (deductErr || newBalance === -1 || newBalance === null) {
       const errMsg = scheduled
         ? "Insufficient credits — schedule paused"
         : "Insufficient credits";
@@ -184,7 +183,6 @@ Deno.serve(async (req) => {
         .update({ status: "failed", error_message: errMsg, completed_at: new Date().toISOString() })
         .eq("id", run.id);
 
-      // Auto-disable schedule if this was a scheduled run
       if (scheduled) {
         await adminClient
           .from("deployments")
@@ -196,26 +194,21 @@ Deno.serve(async (req) => {
           })
           .eq("id", deployment_id);
 
-        // Insert notification
         await adminClient.from("notifications").insert({
           user_id: userId,
           type: "error",
           title: "Scheduled run failed — insufficient credits",
-          message: `Your scheduled agent "${agent.name}" was paused because you don't have enough credits. You need ${creditCost} credits but have ${profile?.credits_balance ?? 0}. Buy credits to resume.`,
+          message: `Your scheduled agent "${agent.name}" was paused because you don't have enough credits. You need ${creditCost} credits but have 0. Buy credits to resume.`,
         });
       }
 
       return new Response(
-        JSON.stringify({ error: "Insufficient credits", balance: profile?.credits_balance ?? 0 }),
+        JSON.stringify({ error: "Insufficient credits", balance: 0 }),
         { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    await adminClient
-      .from("profiles")
-      .update({ credits_balance: profile.credits_balance - creditCost })
-      .eq("user_id", userId);
-
+    // Transaction log
     await adminClient.from("transactions").insert({
       user_id: userId,
       type: "usage",
@@ -250,11 +243,8 @@ Deno.serve(async (req) => {
       if (!llmRes.ok || llmData.error) {
         const errMsg = llmData.error?.message || JSON.stringify(llmData.error) || "LLM request failed";
 
-        // Refund credits
-        await adminClient
-          .from("profiles")
-          .update({ credits_balance: profile.credits_balance })
-          .eq("user_id", userId);
+        // Refund credits atomically
+        await adminClient.rpc("refund_credits", { p_user_id: userId, p_amount: creditCost });
         await adminClient.from("transactions").insert({
           user_id: userId,
           type: "refund",
@@ -300,11 +290,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } catch (llmErr) {
-      // Refund on network error
-      await adminClient
-        .from("profiles")
-        .update({ credits_balance: profile.credits_balance })
-        .eq("user_id", userId);
+      // Refund on network error atomically
+      await adminClient.rpc("refund_credits", { p_user_id: userId, p_amount: creditCost });
       await adminClient.from("transactions").insert({
         user_id: userId,
         type: "refund",
