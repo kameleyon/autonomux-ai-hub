@@ -17,9 +17,11 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [dark, setDark] = useState(() =>
-    document.documentElement.classList.contains("dark")
-  );
+  const [dark, setDark] = useState(() => {
+    const stored = localStorage.getItem("autonomux-theme");
+    if (stored) return stored === "dark";
+    return document.documentElement.classList.contains("dark");
+  });
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -29,6 +31,7 @@ const Navbar = () => {
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
+    localStorage.setItem("autonomux-theme", dark ? "dark" : "light");
   }, [dark]);
 
   return (

@@ -11,6 +11,9 @@ export function useRealtimeRuns(userId: string | undefined) {
     const channel = supabase
       .channel("runs-realtime")
       .on(
+        // Note: runs table doesn't have a user_id column directly, so we can't filter
+        // by user at the subscription level. RLS ensures users only see their own data
+        // in queries, and the subscription just triggers query invalidation.
         "postgres_changes",
         { event: "*", schema: "public", table: "runs" },
         () => {

@@ -12,7 +12,7 @@ export function useRealtimeDeployments(userId: string | undefined) {
       .channel("deployments-realtime")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "deployments" },
+        { event: "*", schema: "public", table: "deployments", filter: `user_id=eq.${userId}` },
         () => {
           queryClient.invalidateQueries({ queryKey: ["my-deployments"] });
         }
