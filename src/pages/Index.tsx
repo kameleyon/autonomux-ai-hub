@@ -1,9 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, Search, PenTool, Star, Sun, Moon } from "lucide-react";
+import { Mail, Search, PenTool, Star } from "lucide-react";
 import logo from "@/assets/logo.png";
-import { useEffect, useState } from "react";
 
 const agentCards = [
   { name: "Email Auto-Responder", icon: Mail, rating: 4.8 },
@@ -12,20 +11,8 @@ const agentCards = [
 ];
 
 const Index = () => {
-  const [dark, setDark] = useState(false);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", dark);
-  }, [dark]);
-
   return (
-    <div className="min-h-screen bg-background">
-      {/* Theme toggle */}
-      <div className="fixed top-4 right-4 z-50">
-        <Button variant="outline" size="icon" onClick={() => setDark(!dark)}>
-          {dark ? <Sun size={18} /> : <Moon size={18} />}
-        </Button>
-      </div>
+    <div className="bg-background">
       <div className="max-w-4xl mx-auto px-6 py-16 space-y-16">
         {/* Hero */}
         <section className="text-center space-y-6">
