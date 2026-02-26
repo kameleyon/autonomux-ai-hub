@@ -67,9 +67,7 @@ const DashboardSidebar = () => {
   return (
     <Sidebar collapsible="icon">
       {/* Brand */}
-      <SidebarHeader className="p-3 flex items-center justify-center">
-        <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
-      </SidebarHeader>
+      <SidebarHeader className="p-3" />
 
       <SidebarSeparator />
 
