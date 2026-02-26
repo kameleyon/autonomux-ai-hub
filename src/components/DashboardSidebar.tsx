@@ -19,6 +19,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
   SidebarSeparator,
+  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
@@ -29,7 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import logo from "@/assets/logo.png";
+
 
 const links = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -66,15 +67,8 @@ const DashboardSidebar = () => {
   return (
     <Sidebar collapsible="icon">
       {/* Brand */}
-      <SidebarHeader className="p-3">
-        <div className="flex items-center gap-2.5 overflow-hidden">
-          <img src={logo} alt="Autonomux" className="w-7 h-7 shrink-0" />
-          {!collapsed && (
-            <span className="text-gradient text-lg font-medium font-display truncate">
-              Autonomux
-            </span>
-          )}
-        </div>
+      <SidebarHeader className="p-3 flex items-center justify-center">
+        <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
       </SidebarHeader>
 
       <SidebarSeparator />
