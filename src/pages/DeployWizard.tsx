@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { CheckCircle, ArrowLeft, ArrowRight, Lock, Shield } from "lucide-react";
+import { encryptCredential } from "@/lib/credentials";
 
 const DeployWizard = () => {
   const { agentId } = useParams<{ agentId: string }>();
@@ -63,30 +64,48 @@ const DeployWizard = () => {
     if (!user) return;
     setDeploying(true);
 
-    // Save credentials
-    for (const [type, value] of Object.entries(credentials)) {
-      if (value) {
-        await supabase.from("user_credentials").insert({
-          user_id: user.id,
-          credential_type: type,
-          encrypted_value: value,
-        });
+    try {
+      // Encrypt and save credentials
+      for (const [type, value] of Object.entries(credentials)) {
+        if (value) {
+          const encrypted = await encryptCredential(value);
+          await supabase.from("user_credentials").insert({
+            user_id: user.id,
+            credential_type: type,
+            encrypted_value: encrypted,
+          });
+        }
       }
-    }
 
-    // Create deployment
-    const { error } = await supabase.from("deployments").insert({
-      user_id: user.id,
-      agent_id: agent.id,
-      config,
-      status: "active",
-    });
+      // Create deployment
+      const { data: deployment, error } = await supabase.from("deployments").insert({
+        user_id: user.id,
+        agent_id: agent.id,
+        config,
+        status: "active",
+      }).select().single();
 
-    setDeploying(false);
-    if (error) {
-      toast.error("Failed to deploy: " + error.message);
-    } else {
+      if (error) {
+        toast.error("Failed to deploy: " + error.message);
+        setDeploying(false);
+        return;
+      }
+
+      // Trigger first run
+      try {
+        await supabase.functions.invoke("run-agent", {
+          body: { deployment_id: deployment.id },
+        });
+        toast.success("Agent deployed and first run started!");
+      } catch {
+        toast.success("Agent deployed! First run will start shortly.");
+      }
+
+      setDeploying(false);
       setDeployed(true);
+    } catch (err: any) {
+      toast.error("Encryption failed: " + err.message);
+      setDeploying(false);
     }
   };
 
@@ -97,11 +116,14 @@ const DeployWizard = () => {
           <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white">
             <CheckCircle size={40} />
           </div>
-          <h1 className="text-3xl font-medium font-display">Your Agent is Live!</h1>
+          <h1 className="text-3xl font-medium font-display">Your Agent is Live and Running!</h1>
           <p className="text-muted-foreground">{agent.name} is now deployed and running.</p>
           <div className="flex justify-center gap-4">
             <Button variant="gradient" asChild>
               <Link to="/dashboard">Go to Dashboard</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/dashboard/runs">View Run History →</Link>
             </Button>
             <Button variant="outline" asChild>
               <Link to="/marketplace">Deploy Another</Link>

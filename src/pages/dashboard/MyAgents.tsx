@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Pause, Play, Trash2, Settings } from "lucide-react";
+import { Pause, Play, Trash2, Zap, Loader2 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
 
 type DeploymentStatus = Database["public"]["Enums"]["deployment_status"];
@@ -21,6 +23,7 @@ const statusStyles: Record<string, string> = {
 const MyAgents = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const [runningId, setRunningId] = useState<string | null>(null);
 
   const { data: deployments, isLoading } = useQuery({
     queryKey: ["my-deployments", user?.id],
@@ -57,6 +60,33 @@ const MyAgents = () => {
     },
   });
 
+  const handleRun = async (deploymentId: string) => {
+    setRunningId(deploymentId);
+    try {
+      const { data, error } = await supabase.functions.invoke("run-agent", {
+        body: { deployment_id: deploymentId },
+      });
+      if (error) {
+        toast.error(error.message || "Run failed");
+      } else if (data?.error) {
+        if (data.error === "Insufficient credits") {
+          toast.error("Insufficient credits");
+        } else {
+          toast.error(data.error);
+        }
+      } else {
+        toast.success("Agent ran successfully!");
+        qc.invalidateQueries({ queryKey: ["my-deployments"] });
+        qc.invalidateQueries({ queryKey: ["my-runs"] });
+        qc.invalidateQueries({ queryKey: ["profile"] });
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Run failed");
+    } finally {
+      setRunningId(null);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <h1 className="text-2xl font-medium font-display">My Agents</h1>
@@ -74,7 +104,7 @@ const MyAgents = () => {
               <TableRow>
                 <TableHead>Agent</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
+                <TableHead>Last Run</TableHead>
                 <TableHead>Credits/Run</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -86,9 +116,26 @@ const MyAgents = () => {
                   <TableCell>
                     <Badge className={statusStyles[dep.status] ?? ""}>{dep.status}</Badge>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{new Date(dep.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {(dep as any).last_run_at
+                      ? formatDistanceToNow(new Date((dep as any).last_run_at), { addSuffix: true })
+                      : "Never"}
+                  </TableCell>
                   <TableCell>{(dep as any).agents?.base_credit_cost ?? "—"}</TableCell>
                   <TableCell className="text-right space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={dep.status !== "active" || runningId === dep.id}
+                      onClick={() => handleRun(dep.id)}
+                      title="Run agent"
+                    >
+                      {runningId === dep.id ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <Zap size={16} className="text-primary" />
+                      )}
+                    </Button>
                     <Button
                       variant="ghost" size="icon"
                       onClick={() => updateStatus.mutate({

@@ -14,6 +14,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Plus, Trash2, KeyRound } from "lucide-react";
+import { encryptCredential } from "@/lib/credentials";
 
 const Credentials = () => {
   const { user } = useAuth();
@@ -33,10 +34,11 @@ const Credentials = () => {
 
   const addCred = useMutation({
     mutationFn: async () => {
+      const encrypted = await encryptCredential(newValue);
       const { error } = await supabase.from("user_credentials").insert({
         user_id: user!.id,
         credential_type: newType,
-        encrypted_value: newValue,
+        encrypted_value: encrypted,
       });
       if (error) throw error;
     },
