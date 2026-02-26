@@ -189,7 +189,7 @@ const Marketplace = () => {
                           </div>
                           <div className="flex items-center justify-between pt-1">
                             <span className="text-xs text-muted-foreground">{agent.total_deployments} deployments</span>
-                            <span className="text-xs text-primary flex items-center gap-1">Deploy <Rocket size={12} /></span>
+                            <span className="text-xs text-accent flex items-center gap-1">Deploy <Rocket size={12} /></span>
                           </div>
                         </CardContent>
                       </Card>
