@@ -183,6 +183,21 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Rate limit: max 10 runs per minute per deployment
+    const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
+    const { count: recentRunCount } = await adminClient
+      .from("runs")
+      .select("id", { count: "exact", head: true })
+      .eq("deployment_id", deployment_id)
+      .gte("created_at", oneMinuteAgo);
+
+    if ((recentRunCount ?? 0) >= 10) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Max 10 runs per minute per agent." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const agent = deployment.agents;
     const creditCost = agent.base_credit_cost;
 
