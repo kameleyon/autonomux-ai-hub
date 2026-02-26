@@ -6,74 +6,110 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-function getPrompt(category: string, slug: string, config: Record<string, any>): { system: string; user: string } {
+async function webSearch(query: string, count = 5): Promise<Array<{ title: string; url: string; description: string }>> {
+  try {
+    const braveKey = Deno.env.get("BRAVE_SEARCH_API_KEY");
+    if (!braveKey) return [];
+
+    const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${count}`;
+    const res = await fetch(url, {
+      headers: { Accept: "application/json", "X-Subscription-Token": braveKey },
+    });
+    if (!res.ok) { await res.text(); return []; }
+    const data = await res.json();
+    return (data.web?.results ?? []).map((r: any) => ({
+      title: r.title, url: r.url, description: r.description,
+    }));
+  } catch { return []; }
+}
+
+function formatSearchResults(results: Array<{ title: string; url: string; description: string }>): string {
+  if (results.length === 0) return "(No search results available)";
+  return results.map((r, i) => `${i + 1}. ${r.title}\n   URL: ${r.url}\n   ${r.description}`).join("\n\n");
+}
+
+async function getPrompt(category: string, slug: string, config: Record<string, any>): Promise<{ system: string; user: string }> {
   const configStr = JSON.stringify(config, null, 2);
 
+  // Email Automation
   if (category === "Email" || category === "Email Automation" || slug === "email-auto-responder") {
     return {
-      system: "You are a professional email assistant. Read the incoming email and draft a reply that matches the specified tone and rules. Output ONLY the reply body — no subject line, no explanations, no 'Here\u2019s a draft' preamble. Write it exactly as it should be sent.",
+      system: "You are a professional email assistant. Read the incoming email and draft a reply that matches the specified tone and rules. Output ONLY the reply body \u2014 no subject line, no explanations, no \u2018Here\u2019s a draft\u2019 preamble. Write it exactly as it should be sent.",
       user: `Tone: ${config.tone || "Professional"}\nResponse length: ${config.response_length || "Medium (1 paragraph)"}\nMy rules: ${config.rules || "Be polite, address all points raised, sign off with best regards"}\n---\nIncoming email to reply to:\n${config.email_content || "(no email provided)"}\n---\nDraft a reply to this email.`,
     };
   }
 
+  // Content Creation
   if (category === "Content" || category === "Content Creation") {
     if (slug === "meeting-summarizer") {
       return {
-        system: "You are a meeting notes specialist. Analyze the transcript and produce a structured summary.",
-        user: `Meeting transcript:\n${config.transcript || "(none)"}\nOutput type: ${config.output_type || "All"}\n\nProvide:\n1. Executive Summary\n2. Key Discussion Points\n3. Decisions Made\n4. Action Items\n5. Follow-up Items`,
+        system: "You are a meeting notes specialist. Analyze the provided transcript and produce a structured summary. Use clear sections with headers. Be concise but don't miss key points.",
+        user: `Meeting transcript:\n---\n${config.transcript || "(none)"}\n---\nOutput type: ${config.output_type || "All"}\n\nProvide:\n1. Executive Summary (2-3 sentences)\n2. Key Discussion Points (bullet list)\n3. Decisions Made\n4. Action Items (with assignees if mentioned)\n5. Follow-up Items / Open Questions`,
       };
     }
     return {
-      system: "You are a professional blog writer. Create SEO-optimized, engaging blog content.",
-      user: `Write a blog post:\nTopic: ${config.topic || "AI Automation"}\nTone: ${config.tone || "Informative"}\nWord count: ${config.word_count || "1000"}\nTarget audience: ${config.target_audience || "General audience"}`,
+      system: "You are an expert SEO content writer. Write engaging, well-structured blog posts with proper headings (H2, H3), bullet points, and actionable insights. Include a compelling introduction and a clear conclusion with a call-to-action. Use markdown formatting. Target the specified word count closely.",
+      user: `Write a blog post about: ${config.topic || "AI Automation"}\nTone: ${config.tone || "Informative"}\nTarget word count: ${config.word_count || "1000"}\nTarget audience: ${config.target_audience || "General audience"}\n\nRequirements:\n- SEO-optimized with relevant keywords naturally integrated\n- Include at least 3 subheadings\n- Add specific examples or data points where relevant\n- End with a call-to-action`,
     };
   }
 
+  // Sales — Lead Scraper (with web search)
+  if (category === "Sales") {
+    const query = `${config.industry || "Technology"} companies ${config.location || "United States"} ${config.company_size || "11-50"} employees`;
+    const searchResults = await webSearch(query);
+    const searchContext = formatSearchResults(searchResults);
+    return {
+      system: "You are a B2B lead research specialist. Using the search results provided and your knowledge, generate detailed lead profiles for companies matching the criteria. Each lead should include: Company Name, Website, Estimated Size, Industry, Key Contact Roles to Target, and a Personalized Outreach Angle.",
+      user: `Search results for context:\n${searchContext}\n\nCriteria:\nIndustry: ${config.industry || "Technology"}\nCompany size: ${config.company_size || "11-50"}\nLocation: ${config.location || "United States"}\n\nGenerate ${config.num_leads || "10"} lead profiles.`,
+    };
+  }
+
+  // Marketing — Competitor Monitor (with web search)
+  if (category === "Marketing") {
+    const query = `${config.competitor_url || ""} ${config.focus_areas || ""} latest news updates`;
+    const searchResults = await webSearch(query);
+    const searchContext = formatSearchResults(searchResults);
+    return {
+      system: "You are a competitive intelligence analyst. Analyze the search results and available information about the specified competitor. Provide actionable insights organized by focus area.",
+      user: `Search results:\n${searchContext}\n\nCompetitor: ${config.competitor_url || "(none)"}\nFocus: ${config.focus_areas || "All"}\nIndustry: ${config.industry || "Technology"}\n\nAnalyze this competitor and provide:\n1. Overview & Positioning\n2. Recent Changes/Updates\n3. Strengths & Weaknesses\n4. Opportunities for Differentiation\n5. Recommended Actions`,
+    };
+  }
+
+  // Customer Support
+  if (category === "Support" || category === "Customer Support") {
+    return {
+      system: "You are a helpful customer support agent. Answer questions ONLY based on the knowledge base provided. If the answer isn't in the knowledge base, say so honestly. Be friendly, clear, and concise. If the question requires escalation, suggest it.",
+      user: `Knowledge base:\n---\n${config.knowledge_base || "(none)"}\n---\n\nCustomer question: ${config.question || "How can I help?"}\n\nProvide a helpful answer based on the knowledge base above.`,
+    };
+  }
+
+  // Social Media
+  if (category === "Social Media") {
+    return {
+      system: "You are a social media content strategist. Create engaging, platform-appropriate posts that drive engagement. Each post should include hashtags, emojis where appropriate, and a clear call-to-action. Tailor content to each platform's best practices and character limits.",
+      user: `Create ${config.num_posts || "5"} social media posts about: ${config.topic || "AI"}\nPlatform(s): ${config.platforms || "All"}\nTone: ${config.tone || "Professional"}\n\nFor each post provide:\n1. The post content (platform-ready)\n2. Suggested posting time\n3. 3-5 relevant hashtags\n4. Expected engagement type (likes, shares, comments)`,
+    };
+  }
+
+  // Development — Code Reviewer
+  if (category === "Development") {
+    return {
+      system: "You are a senior software engineer performing a code review. Analyze the code for the specified focus areas. Be constructive, specific, and provide code examples for fixes. Rate the overall quality on a scale of 1-10.",
+      user: `Language: ${config.language || "TypeScript"}\nFocus areas: ${config.focus || "All"}\n\nCode to review:\n\`\`\`\n${config.code || "(no code)"}\n\`\`\`\n\nProvide:\n1. Overall Quality Score (X/10)\n2. Critical Issues (must fix)\n3. Warnings (should fix)\n4. Suggestions (nice to have)\n5. What's Done Well\n6. Refactored code snippets where applicable`,
+    };
+  }
+
+  // Data & Analytics
   if (category === "Data" || category === "Data & Analytics") {
     if (slug === "invoice-processor") {
       return {
-        system: "You are an accounts payable specialist. Extract invoice data accurately.",
-        user: `Invoice text:\n${config.input_text || "(none)"}\nFields: ${config.fields_to_extract || "all"}\nFormat: ${config.output_format || "JSON"}`,
+        system: "You are an accounts payable specialist. Extract invoice data accurately. Every number must be exact \u2014 no rounding, no guessing. If a field is unclear, mark it as 'NEEDS VERIFICATION'.",
+        user: `Invoice text:\n---\n${config.input_text || "(none)"}\n---\nFields to extract: ${config.fields_to_extract || "all"}\nOutput format: ${config.output_format || "JSON"}\n\nExtract the data precisely.`,
       };
     }
     return {
-      system: "You are a data extraction specialist. Parse and structure information from the provided text.",
-      user: `Extract data from:\nInput: ${config.input_text || "(no input)"}\nFormat: ${config.output_format || "JSON"}`,
-    };
-  }
-
-  if (category === "Support" || category === "Customer Support") {
-    return {
-      system: "You are a customer support agent. Answer questions helpfully based on the knowledge base provided.",
-      user: `Knowledge base: ${config.knowledge_base || "(none)"}\nQuestion: ${config.question || "How can I help?"}`,
-    };
-  }
-
-  if (category === "Sales") {
-    return {
-      system: "You are a lead research assistant. Generate detailed lead profiles based on criteria.",
-      user: `Generate leads:\nIndustry: ${config.industry || "Technology"}\nCompany size: ${config.company_size || "11-50"}\nLocation: ${config.location || "United States"}\nNumber: ${config.num_leads || "10"}`,
-    };
-  }
-
-  if (category === "Marketing") {
-    return {
-      system: "You are a competitive intelligence analyst. Analyze competitors and provide actionable insights.",
-      user: `Competitor: ${config.competitor_url || "(none)"}\nFocus: ${config.focus_areas || "All"}\nIndustry: ${config.industry || "Technology"}\n\nProvide overview, recent changes, strengths/weaknesses, and recommended actions.`,
-    };
-  }
-
-  if (category === "Social Media") {
-    return {
-      system: "You are a social media content strategist. Create engaging, platform-appropriate posts.",
-      user: `Create ${config.num_posts || "5"} posts about: ${config.topic || "AI"}\nPlatform: ${config.platforms || "All"}\nTone: ${config.tone || "Professional"}\n\nInclude hashtags and posting suggestions.`,
-    };
-  }
-
-  if (category === "Development") {
-    return {
-      system: "You are a senior software engineer performing a code review.",
-      user: `Language: ${config.language || "TypeScript"}\nFocus: ${config.focus || "All"}\n\nCode:\n\`\`\`\n${config.code || "(no code)"}\n\`\`\`\n\nProvide: quality score, issues, suggestions, and improved code.`,
+      system: "You are a data extraction and transformation specialist. Parse the provided text and extract structured data in the requested format. Be thorough \u2014 don't miss any data points. If data is ambiguous, note it.",
+      user: `Input text:\n---\n${config.input_text || "(no input)"}\n---\nOutput format: ${config.output_format || "JSON"}\n\nExtract all identifiable data points and structure them in ${config.output_format || "JSON"} format.`,
     };
   }
 
@@ -269,9 +305,9 @@ Deno.serve(async (req) => {
       amount_cents: 0,
     });
 
-    // Build prompt
+    // Build prompt (now async for web search)
     const config = (deployment.config as Record<string, any>) ?? {};
-    const { system, user: userMsg } = getPrompt(agent.category, agent.slug, config);
+    const { system, user: userMsg } = await getPrompt(agent.category, agent.slug, config);
 
     // Call OpenRouter
     try {
@@ -287,7 +323,7 @@ Deno.serve(async (req) => {
             { role: "system", content: system },
             { role: "user", content: userMsg },
           ],
-          max_tokens: 2000,
+          max_tokens: 4000,
         }),
       });
 
