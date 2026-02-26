@@ -42,15 +42,15 @@ Deno.serve(async (req) => {
     );
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !authUser) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const userId = claimsData.claims.sub;
+    const userId = authUser.id;
     const { deployment_id, action, interval } = await req.json();
 
     if (!deployment_id || !action) {
@@ -122,7 +122,6 @@ Deno.serve(async (req) => {
 
       if (existingJob?.cron_job_id) {
         await adminClient.rpc("", {}).catch(() => {});
-        // Unschedule via SQL
         await adminClient.from("scheduled_jobs").delete().eq("deployment_id", deployment_id);
         try {
           await fetch(`${supabaseUrl}/rest/v1/rpc/`, {
@@ -140,7 +139,6 @@ Deno.serve(async (req) => {
       const scheduleSQL = `SELECT cron.schedule('${jobName}', '${cronExpr}', $$SELECT net.http_post(url := '${supabaseUrl}/functions/v1/run-agent', headers := '{"Content-Type": "application/json", "Authorization": "Bearer ${serviceRoleKey}"}'::jsonb, body := '{"deployment_id": "${deployment_id}", "scheduled": true}'::jsonb) AS request_id;$$)`;
 
       const { data: cronResult, error: cronErr } = await adminClient.rpc("exec_sql", { sql: scheduleSQL }).catch(async () => {
-        // Fallback: use raw SQL query via REST
         const res = await fetch(`${supabaseUrl}/rest/v1/rpc/exec_sql`, {
           method: "POST",
           headers: {
@@ -152,7 +150,6 @@ Deno.serve(async (req) => {
           body: JSON.stringify({ sql: scheduleSQL }),
         });
         if (!res.ok) {
-          // Try direct postgres function 
           return { data: null, error: "Could not schedule" };
         }
         return { data: await res.json(), error: null };
@@ -170,7 +167,6 @@ Deno.serve(async (req) => {
         case "weekly": nextRun.setDate(nextRun.getDate() + (8 - nextRun.getDay()) % 7 || 7); nextRun.setHours(9, 0, 0, 0); break;
       }
 
-      // Update deployment
       await adminClient
         .from("deployments")
         .update({
@@ -181,10 +177,9 @@ Deno.serve(async (req) => {
         })
         .eq("id", deployment_id);
 
-      // Store job reference
       await adminClient.from("scheduled_jobs").upsert({
         deployment_id,
-        cron_job_id: 0, // pg_cron job ID tracking
+        cron_job_id: 0,
       }, { onConflict: "deployment_id" });
 
       return new Response(
@@ -200,7 +195,6 @@ Deno.serve(async (req) => {
       const sanitizedId = deployment_id.replace(/[^a-f0-9-]/gi, "");
       const jobName = `autonomux_deployment_${sanitizedId}`;
 
-      // Try to unschedule
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -216,7 +210,6 @@ Deno.serve(async (req) => {
         });
       } catch {}
 
-      // Update deployment
       await adminClient
         .from("deployments")
         .update({
@@ -227,7 +220,6 @@ Deno.serve(async (req) => {
         })
         .eq("id", deployment_id);
 
-      // Remove job reference
       await adminClient.from("scheduled_jobs").delete().eq("deployment_id", deployment_id);
 
       return new Response(

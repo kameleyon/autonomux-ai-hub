@@ -26,7 +26,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Auth check
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -42,8 +41,8 @@ Deno.serve(async (req) => {
     );
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !authUser) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -63,7 +62,6 @@ Deno.serve(async (req) => {
     const encoded = new TextEncoder().encode(value);
     const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
 
-    // Concatenate iv + ciphertext (GCM appends auth tag automatically)
     const combined = new Uint8Array(iv.length + ciphertext.byteLength);
     combined.set(iv);
     combined.set(new Uint8Array(ciphertext), iv.length);

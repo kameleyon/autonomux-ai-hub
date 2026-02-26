@@ -6,9 +6,6 @@ verify_jwt = false
 [functions.decrypt-credential]
 verify_jwt = false
 
-[functions.deduct-credits]
-verify_jwt = false
-
 [functions.run-agent]
 verify_jwt = false
 
