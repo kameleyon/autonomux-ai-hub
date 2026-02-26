@@ -1,12 +1,15 @@
+import { useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
 import {
-  Star, ArrowLeft, Lock, Clock, CheckCircle, Users, Calendar, Rocket,
+  Star, ArrowLeft, Lock, Clock, CheckCircle, Users, Calendar, Rocket, Zap, Loader2,
   Mail, Search, PenTool, Share2, Headphones, Database, FileText, BarChart2, Mic, Eye,
 } from "lucide-react";
 
@@ -21,6 +24,8 @@ const iconMap: Record<string, LucideIcon> = {
 const AgentDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [running, setRunning] = useState(false);
 
   const { data: agent, isLoading } = useQuery({
     queryKey: ["agent", slug],
@@ -34,6 +39,43 @@ const AgentDetail = () => {
     },
     enabled: !!slug,
   });
+
+  const { data: activeDeployment } = useQuery({
+    queryKey: ["active-deployment", user?.id, agent?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("deployments")
+        .select("id")
+        .eq("user_id", user!.id)
+        .eq("agent_id", agent!.id)
+        .eq("status", "active")
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user && !!agent,
+  });
+
+  const handleRunNow = async () => {
+    if (!activeDeployment) return;
+    setRunning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("run-agent", {
+        body: { deployment_id: activeDeployment.id },
+      });
+      if (error) {
+        toast.error(error.message || "Run failed");
+      } else if (data?.error) {
+        toast.error(data.error);
+      } else {
+        toast.success("Agent ran successfully!");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Run failed");
+    } finally {
+      setRunning(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -62,12 +104,10 @@ const AgentDetail = () => {
   return (
     <div className="bg-background min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back link */}
         <Link to="/marketplace" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-6">
           <ArrowLeft size={14} /> Back to Marketplace
         </Link>
 
-        {/* Top section */}
         <div className="flex flex-col sm:flex-row items-start gap-6 mb-8">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white shrink-0">
             <Icon size={40} />
@@ -85,16 +125,21 @@ const AgentDetail = () => {
             <p className="text-muted-foreground">{agent.description}</p>
           </div>
           <div className="flex flex-col gap-2 shrink-0">
-            <Button variant="gradient" size="lg" asChild>
-              <Link to={`/deploy/${agent.id}`}>Deploy This Agent</Link>
-            </Button>
+            {activeDeployment ? (
+              <Button variant="gradient" size="lg" onClick={handleRunNow} disabled={running}>
+                {running ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Zap size={16} className="mr-2" />}
+                Run Now
+              </Button>
+            ) : (
+              <Button variant="gradient" size="lg" asChild>
+                <Link to={`/deploy/${agent.id}`}>Deploy This Agent</Link>
+              </Button>
+            )}
             <p className="text-xs text-center text-muted-foreground">{agent.base_credit_cost} credits per run</p>
           </div>
         </div>
 
-        {/* Body: left tabs + right sidebar */}
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left column */}
           <div className="flex-1 lg:w-[65%]">
             <Tabs defaultValue="overview">
               <TabsList>
@@ -134,7 +179,6 @@ const AgentDetail = () => {
             </Tabs>
           </div>
 
-          {/* Right sidebar */}
           <aside className="lg:w-[35%] space-y-4">
             <Card>
               <CardContent className="p-5 space-y-4">
@@ -173,9 +217,16 @@ const AgentDetail = () => {
               </Card>
             )}
 
-            <Button variant="gradient" className="w-full" asChild>
-              <Link to={`/deploy/${agent.id}`}>Deploy This Agent</Link>
-            </Button>
+            {activeDeployment ? (
+              <Button variant="gradient" className="w-full" onClick={handleRunNow} disabled={running}>
+                {running ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Zap size={16} className="mr-2" />}
+                Run Now
+              </Button>
+            ) : (
+              <Button variant="gradient" className="w-full" asChild>
+                <Link to={`/deploy/${agent.id}`}>Deploy This Agent</Link>
+              </Button>
+            )}
           </aside>
         </div>
       </div>

@@ -1,12 +1,13 @@
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCountUp } from "@/hooks/useCountUp";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bot, Zap, Coins, TrendingUp, Plus } from "lucide-react";
+import { Bot, Zap, Coins, TrendingUp, Plus, AlertTriangle, XCircle } from "lucide-react";
+import { toast } from "sonner";
 
 const StatCard = ({ label, value, icon: Icon, suffix = "" }: { label: string; value: number; icon: any; suffix?: string }) => {
   const { value: animated, ref } = useCountUp(value);
@@ -29,6 +30,7 @@ const StatCard = ({ label, value, icon: Icon, suffix = "" }: { label: string; va
 
 const Overview = () => {
   const { user } = useAuth();
+  const qc = useQueryClient();
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -63,9 +65,49 @@ const Overview = () => {
   const totalRuns = runs?.length ?? 0;
   const successRuns = (runs ?? []).filter((r) => r.status === "success").length;
   const successRate = totalRuns > 0 ? Math.round((successRuns / totalRuns) * 100) : 0;
+  const creditsBalance = profile?.credits_balance ?? 0;
+
+  const handleRunAgain = async (deploymentId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke("run-agent", {
+        body: { deployment_id: deploymentId },
+      });
+      if (error) {
+        toast.error(error.message || "Run failed");
+      } else if (data?.error) {
+        toast.error(data.error);
+      } else {
+        toast.success("Agent ran successfully!");
+        qc.invalidateQueries({ queryKey: ["my-runs-overview"] });
+        qc.invalidateQueries({ queryKey: ["profile"] });
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Run failed");
+    }
+  };
 
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* Credits Warning */}
+      {creditsBalance <= 0 && (
+        <div className="flex items-center gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+          <XCircle size={20} className="text-destructive shrink-0" />
+          <p className="text-sm text-destructive font-medium">🚫 No credits remaining. Buy credits to run your agents.</p>
+          <Button variant="outline" size="sm" asChild className="ml-auto shrink-0">
+            <Link to="/dashboard/billing">Buy Credits</Link>
+          </Button>
+        </div>
+      )}
+      {creditsBalance > 0 && creditsBalance < 10 && (
+        <div className="flex items-center gap-3 p-4 rounded-lg bg-warning/10 border border-warning/20">
+          <AlertTriangle size={20} className="text-warning shrink-0" />
+          <p className="text-sm text-foreground">⚠️ Low credits! You have {creditsBalance} credits remaining.</p>
+          <Button variant="outline" size="sm" asChild className="ml-auto shrink-0">
+            <Link to="/dashboard/billing">Buy Credits</Link>
+          </Button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-medium font-display">Dashboard</h1>
@@ -79,7 +121,7 @@ const Overview = () => {
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Active Agents" value={activeAgents} icon={Bot} />
         <StatCard label="Total Runs" value={totalRuns} icon={Zap} />
-        <StatCard label="Credits Remaining" value={profile?.credits_balance ?? 0} icon={Coins} />
+        <StatCard label="Credits Remaining" value={creditsBalance} icon={Coins} />
         <StatCard label="Success Rate" value={successRate} icon={TrendingUp} suffix="%" />
       </div>
 
@@ -99,12 +141,22 @@ const Overview = () => {
               };
               return (
                 <Card key={run.id}>
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div>
+                  <CardContent className="p-4 flex items-center justify-between gap-4">
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium">{(dep as any)?.agents?.name ?? "Agent"}</p>
                       <p className="text-xs text-muted-foreground">{new Date(run.created_at).toLocaleString()}</p>
+                      {run.status === "success" && run.output_summary && (
+                        <p className="text-xs text-muted-foreground mt-1 truncate">{run.output_summary.substring(0, 100)}...</p>
+                      )}
                     </div>
-                    <Badge className={statusColors[run.status] ?? ""}>{run.status}</Badge>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge className={statusColors[run.status] ?? ""}>{run.status}</Badge>
+                      {dep && dep.status === "active" && (
+                        <Button variant="ghost" size="sm" onClick={() => handleRunAgain(dep.id)}>
+                          <Zap size={14} className="mr-1" /> Run Again
+                        </Button>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               );

@@ -80,6 +80,7 @@ export type Database = {
           config: Json | null
           created_at: string
           id: string
+          last_run_at: string | null
           schedule: string | null
           status: Database["public"]["Enums"]["deployment_status"]
           updated_at: string
@@ -90,6 +91,7 @@ export type Database = {
           config?: Json | null
           created_at?: string
           id?: string
+          last_run_at?: string | null
           schedule?: string | null
           status?: Database["public"]["Enums"]["deployment_status"]
           updated_at?: string
@@ -100,6 +102,7 @@ export type Database = {
           config?: Json | null
           created_at?: string
           id?: string
+          last_run_at?: string | null
           schedule?: string | null
           status?: Database["public"]["Enums"]["deployment_status"]
           updated_at?: string

@@ -1,0 +1,1 @@
+ALTER TABLE public.deployments ADD COLUMN IF NOT EXISTS last_run_at TIMESTAMPTZ;

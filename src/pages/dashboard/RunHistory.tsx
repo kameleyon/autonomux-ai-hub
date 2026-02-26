@@ -4,10 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { differenceInSeconds, differenceInMinutes } from "date-fns";
 
 const statusStyles: Record<string, string> = {
   success: "bg-success text-success-foreground",
@@ -31,7 +31,7 @@ const RunHistory = () => {
   });
 
   const { data: runs, isLoading } = useQuery({
-    queryKey: ["my-runs", user?.id, deployments],
+    queryKey: ["my-runs", user?.id, deployments?.map((d) => d.id).join(",")],
     queryFn: async () => {
       const depIds = (deployments ?? []).map((d) => d.id);
       if (depIds.length === 0) return [];
@@ -39,9 +39,20 @@ const RunHistory = () => {
       return data ?? [];
     },
     enabled: !!deployments,
+    refetchInterval: (query) => {
+      const data = query.state.data as any[] | undefined;
+      return (data ?? []).some((r) => r.status === "running" || r.status === "queued") ? 5000 : false;
+    },
   });
 
   const filtered = (runs ?? []).filter((r) => statusFilter === "all" || r.status === statusFilter);
+
+  const formatDuration = (run: any) => {
+    if (!run.started_at || !run.completed_at) return "—";
+    const secs = differenceInSeconds(new Date(run.completed_at), new Date(run.started_at));
+    if (secs < 60) return `${secs}s`;
+    return `${differenceInMinutes(new Date(run.completed_at), new Date(run.started_at))}m ${secs % 60}s`;
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -73,6 +84,7 @@ const RunHistory = () => {
                 <TableHead>Agent</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Started</TableHead>
+                <TableHead>Duration</TableHead>
                 <TableHead>Credits</TableHead>
                 <TableHead></TableHead>
               </TableRow>
@@ -87,15 +99,23 @@ const RunHistory = () => {
                       <TableCell className="font-medium">{(dep as any)?.agents?.name ?? "—"}</TableCell>
                       <TableCell><Badge className={statusStyles[run.status] ?? ""}>{run.status}</Badge></TableCell>
                       <TableCell className="text-sm text-muted-foreground">{run.started_at ? new Date(run.started_at).toLocaleString() : "—"}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{formatDuration(run)}</TableCell>
                       <TableCell>{run.credits_used ?? 0}</TableCell>
                       <TableCell>{isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</TableCell>
                     </TableRow>
                     {isExpanded && (
                       <TableRow key={`${run.id}-detail`}>
-                        <TableCell colSpan={5} className="bg-muted/50 p-4">
+                        <TableCell colSpan={6} className="bg-muted/50 p-4">
                           <div className="space-y-2 text-sm">
                             {run.input_summary && <p><span className="font-medium">Input:</span> {run.input_summary}</p>}
-                            {run.output_summary && <p><span className="font-medium">Output:</span> {run.output_summary}</p>}
+                            {run.output_summary && (
+                              <div>
+                                <span className="font-medium">Output:</span>
+                                <div className="mt-1 whitespace-pre-wrap bg-background p-3 rounded-lg border text-xs max-h-96 overflow-y-auto">
+                                  {run.output_summary}
+                                </div>
+                              </div>
+                            )}
                             {run.error_message && <p className="text-destructive"><span className="font-medium">Error:</span> {run.error_message}</p>}
                             {!run.input_summary && !run.output_summary && !run.error_message && <p className="text-muted-foreground">No details available.</p>}
                           </div>
