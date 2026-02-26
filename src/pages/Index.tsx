@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Search, PenTool, Star, Sun, Moon } from "lucide-react";
+import logo from "@/assets/logo.png";
 import { useEffect, useState } from "react";
 
 const agentCards = [
@@ -28,6 +29,7 @@ const Index = () => {
       <div className="max-w-4xl mx-auto px-6 py-16 space-y-16">
         {/* Hero */}
         <section className="text-center space-y-6">
+          <img src={logo} alt="Autonomux logo" className="w-20 h-20 mx-auto" />
           <h1 className="text-5xl md:text-6xl font-medium font-display tracking-tight">
             <span className="text-gradient">Autonomux</span>
           </h1>
