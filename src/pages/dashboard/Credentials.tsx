@@ -15,7 +15,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Trash2, KeyRound, ShieldCheck } from "lucide-react";
+import { Plus, Trash2, KeyRound, ShieldCheck, PenLine } from "lucide-react";
 import { encryptCredential } from "@/lib/credentials";
 
 const CREDENTIAL_TYPES = [
@@ -26,6 +26,8 @@ const CREDENTIAL_TYPES = [
   "Custom",
 ];
 
+const normalize = (s: string) => s.toLowerCase().replace(/[_\s-]/g, "");
+
 const Credentials = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -33,6 +35,8 @@ const Credentials = () => {
   const [customType, setCustomType] = useState("");
   const [newValue, setNewValue] = useState("");
   const [open, setOpen] = useState(false);
+  const [editingCred, setEditingCred] = useState<{ id: string; type: string } | null>(null);
+  const [editValue, setEditValue] = useState("");
 
   const { data: creds, isLoading } = useQuery({
     queryKey: ["credentials", user?.id],
@@ -43,7 +47,6 @@ const Credentials = () => {
     enabled: !!user,
   });
 
-  // Get agents to show which use each credential type
   const { data: agents } = useQuery({
     queryKey: ["agents-credentials"],
     queryFn: async () => {
@@ -55,7 +58,7 @@ const Credentials = () => {
   const getAgentsForType = (credType: string) => {
     return (agents ?? [])
       .filter((a: any) => (a.required_credentials ?? []).some((c: string) =>
-        c.toLowerCase().includes(credType.toLowerCase()) || credType.toLowerCase().includes(c.toLowerCase())
+        normalize(c) === normalize(credType)
       ))
       .map((a: any) => a.name);
   };
@@ -91,13 +94,32 @@ const Credentials = () => {
     },
   });
 
+  const updateCred = useMutation({
+    mutationFn: async () => {
+      if (!editingCred) return;
+      const encrypted = await encryptCredential(editValue);
+      const { error } = await supabase
+        .from("user_credentials")
+        .update({ encrypted_value: encrypted })
+        .eq("id", editingCred.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["credentials"] });
+      toast.success("Credential updated");
+      setEditingCred(null);
+      setEditValue("");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-medium font-display">Credentials</h1>
+        <h1 className="text-lg font-medium">Credentials</h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button variant="gradient" size="sm"><Plus size={16} className="mr-2" />Add Credential</Button>
+            <Button variant="gradient" size="sm"><Plus size={14} className="mr-1.5" />Add Credential</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Add Credential</DialogTitle></DialogHeader>
@@ -143,7 +165,7 @@ const Credentials = () => {
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (creds ?? []).length === 0 ? (
-        <Card><CardContent className="p-8 text-center text-muted-foreground">No credentials stored yet.</CardContent></Card>
+        <Card><CardContent className="p-8 text-center text-xs text-muted-foreground">No credentials stored yet.</CardContent></Card>
       ) : (
         <div className="overflow-x-auto">
           <Table>
@@ -161,11 +183,11 @@ const Credentials = () => {
                 const usedBy = getAgentsForType(cred.credential_type);
                 return (
                   <TableRow key={cred.id}>
-                    <TableCell className="font-medium flex items-center gap-2">
+                    <TableCell className="font-medium text-sm flex items-center gap-2">
                       <KeyRound size={14} className="text-muted-foreground" />
                       {cred.credential_type}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">••••••••</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">••••••••</TableCell>
                     <TableCell>
                       {usedBy.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
@@ -180,8 +202,11 @@ const Credentials = () => {
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{new Date(cred.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{new Date(cred.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right space-x-1">
+                      <Button variant="ghost" size="icon" onClick={() => { setEditingCred({ id: cred.id, type: cred.credential_type }); setEditValue(""); }}>
+                        <PenLine size={16} className="text-muted-foreground" />
+                      </Button>
                       <Button variant="ghost" size="icon" title="Test credential (coming soon)" disabled>
                         <ShieldCheck size={16} className="text-muted-foreground" />
                       </Button>
@@ -208,6 +233,24 @@ const Credentials = () => {
           </Table>
         </div>
       )}
+
+      {/* Edit credential dialog */}
+      <Dialog open={!!editingCred} onOpenChange={(open) => { if (!open) setEditingCred(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update {editingCred?.type?.replace(/_/g, " ")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>New Value</Label>
+              <Input type="password" placeholder="Enter new credential value" value={editValue} onChange={(e) => setEditValue(e.target.value)} />
+            </div>
+            <Button variant="gradient" className="w-full" disabled={!editValue} onClick={() => updateCred.mutate()}>
+              Update Credential
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

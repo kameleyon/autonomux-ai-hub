@@ -9,7 +9,6 @@ import logo from "@/assets/logo.png";
 const navLinks = [
   { label: "Marketplace", href: "/marketplace" },
   { label: "Pricing", href: "/pricing" },
-  { label: "How It Works", href: "/#how-it-works" },
 ];
 
 const Navbar = () => {
@@ -34,6 +33,14 @@ const Navbar = () => {
     localStorage.setItem("autonomux-theme", dark ? "dark" : "light");
   }, [dark]);
 
+  const handleHowItWorks = () => {
+    if (window.location.pathname === "/") {
+      document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      window.location.href = "/#how-it-works";
+    }
+  };
+
   return (
     <nav
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
@@ -44,7 +51,6 @@ const Navbar = () => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5">
             <img src={logo} alt="Autonomux" className="w-8 h-8" />
             <span className="text-gradient text-xl font-medium font-display">
@@ -63,6 +69,12 @@ const Navbar = () => {
                 {link.label}
               </Link>
             ))}
+            <button
+              onClick={handleHowItWorks}
+              className="text-sm text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors"
+            >
+              How It Works
+            </button>
           </div>
 
           {/* Desktop actions */}
@@ -142,9 +154,19 @@ const Navbar = () => {
                 {link.label}
               </Link>
             ))}
+            <button
+              onClick={() => { setMobileOpen(false); handleHowItWorks(); }}
+              className="block text-sm text-sidebar-foreground/70 hover:text-sidebar-foreground py-2 w-full text-left"
+            >
+              How It Works
+            </button>
             <div className="pt-3 border-t border-sidebar-border flex flex-col gap-2">
               {user ? (
                 <>
+                  <div className="flex items-center gap-2 py-2">
+                    <NotificationBell />
+                    <span className="text-sm text-sidebar-foreground/70">Notifications</span>
+                  </div>
                   <Button variant="gradient" asChild>
                     <Link to="/dashboard" onClick={() => setMobileOpen(false)}>Dashboard</Link>
                   </Button>

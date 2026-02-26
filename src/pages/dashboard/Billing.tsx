@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Coins, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Coins, Loader2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -75,23 +75,24 @@ const Billing = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-medium font-display">Billing</h1>
+      <h1 className="text-lg font-medium">Billing</h1>
 
       <div className="grid sm:grid-cols-2 gap-4">
         <Card>
           <CardContent className="p-5 space-y-2">
-            <p className="text-sm text-muted-foreground">Current Plan</p>
-            <p className="text-2xl font-medium">{tierLabel}</p>
+            <p className="text-xs text-muted-foreground">Current Plan</p>
+            <p className="text-xl font-medium">{tierLabel}</p>
             <Button variant="outline" size="sm" asChild>
-              <Link to="/pricing">Upgrade Plan</Link>
+              <Link to="/pricing">View Plans</Link>
             </Button>
+            <p className="text-xs text-muted-foreground">Plan upgrades coming soon. Buy credit packs below.</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-5 space-y-2">
-            <p className="text-sm text-muted-foreground">Credits Balance</p>
-            <p className="text-2xl font-medium flex items-center gap-2">
-              <Coins size={20} className="text-accent" /> {profile?.credits_balance ?? 0}
+            <p className="text-xs text-muted-foreground">Credits Balance</p>
+            <p className="text-xl font-medium flex items-center gap-2">
+              <Coins size={18} className="text-accent" /> {profile?.credits_balance ?? 0}
             </p>
             <Dialog>
               <DialogTrigger asChild>
@@ -108,17 +109,20 @@ const Billing = () => {
                     >
                       <CardContent className="p-4 flex items-center justify-between">
                         <div>
-                          <p className="font-medium">{pack.label}</p>
-                          <p className="text-sm text-muted-foreground">{pack.credits} credits</p>
+                          <p className="font-medium text-sm">{pack.label}</p>
+                          <p className="text-xs text-muted-foreground">{pack.credits} credits</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-lg font-medium">${pack.price}</p>
+                          <p className="text-base font-medium">${pack.price}</p>
                           {pack.popular && <Badge variant="accent" className="text-xs">Best Value</Badge>}
                         </div>
                       </CardContent>
                     </Card>
                   ))}
                 </div>
+                {selected === null && (
+                  <p className="text-xs text-muted-foreground text-center">Select a credit pack above to continue</p>
+                )}
                 <Button variant="gradient" disabled={selected === null || purchasing} className="w-full" onClick={handlePurchase}>
                   {purchasing ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
                   {purchasing ? "Redirecting…" : `Purchase ${selected !== null ? `$${creditPacks[selected].price}` : ""}`}
@@ -130,9 +134,9 @@ const Billing = () => {
       </div>
 
       <div>
-        <h2 className="text-lg font-medium mb-4">Transaction History</h2>
+        <h2 className="text-sm font-medium text-muted-foreground mb-3">Transaction History</h2>
         {(transactions ?? []).length === 0 ? (
-          <Card><CardContent className="p-6 text-center text-muted-foreground">No transactions yet.</CardContent></Card>
+          <Card><CardContent className="p-6 text-center text-xs text-muted-foreground">No transactions yet.</CardContent></Card>
         ) : (
           <div className="overflow-x-auto">
             <Table>
@@ -147,10 +151,10 @@ const Billing = () => {
               <TableBody>
                 {(transactions ?? []).map((tx) => (
                   <TableRow key={tx.id}>
-                    <TableCell className="capitalize">{tx.type}</TableCell>
-                    <TableCell>{tx.credits ?? 0}</TableCell>
-                    <TableCell>{tx.amount_cents ? `$${(tx.amount_cents / 100).toFixed(2)}` : "—"}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{new Date(tx.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="capitalize text-sm">{tx.type}</TableCell>
+                    <TableCell className="text-sm">{tx.credits ?? 0}</TableCell>
+                    <TableCell className="text-sm">{tx.amount_cents ? `$${(tx.amount_cents / 100).toFixed(2)}` : "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{new Date(tx.created_at).toLocaleDateString()}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
