@@ -8,10 +8,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Pause, Play, Trash2, Zap, Loader2, Clock, Timer } from "lucide-react";
 import { formatDistanceToNow, differenceInMinutes, differenceInHours, isPast } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
+import type { DeploymentWithAgent } from "@/types/deployment";
 import { ScheduleDialog } from "@/components/ScheduleDialog";
 
 type DeploymentStatus = Database["public"]["Enums"]["deployment_status"];
@@ -49,7 +54,7 @@ const MyAgents = () => {
   useRealtimeRuns(user?.id);
   useRealtimeDeployments(user?.id);
   const [runningId, setRunningId] = useState<string | null>(null);
-  const [scheduleDeployment, setScheduleDeployment] = useState<any | null>(null);
+  const [scheduleDeployment, setScheduleDeployment] = useState<DeploymentWithAgent | null>(null);
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -68,7 +73,7 @@ const MyAgents = () => {
         .select("*, agents(name, base_credit_cost)")
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false });
-      return data ?? [];
+      return (data ?? []) as DeploymentWithAgent[];
     },
     enabled: !!user,
   });
@@ -118,8 +123,9 @@ const MyAgents = () => {
         qc.invalidateQueries({ queryKey: ["my-runs"] });
         qc.invalidateQueries({ queryKey: ["profile"] });
       }
-    } catch (err: any) {
-      toast.error(err.message || "Run failed");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Run failed";
+      toast.error(message);
     } finally {
       setRunningId(null);
     }
@@ -151,17 +157,16 @@ const MyAgents = () => {
             </TableHeader>
             <TableBody>
               {(deployments ?? []).map((dep) => {
-                const d = dep as any;
-                const countdown = d.schedule_enabled ? formatCountdown(d.next_run_at) : null;
-                const intervalInfo = INTERVAL_LABELS[d.schedule_interval] ?? null;
+                const countdown = dep.schedule_enabled ? formatCountdown(dep.next_run_at) : null;
+                const intervalInfo = dep.schedule_interval ? INTERVAL_LABELS[dep.schedule_interval] ?? null : null;
                 return (
                   <TableRow key={dep.id}>
-                    <TableCell className="font-medium">{d.agents?.name ?? "—"}</TableCell>
+                    <TableCell className="font-medium">{dep.agents?.name ?? "—"}</TableCell>
                     <TableCell>
                       <Badge className={statusStyles[dep.status] ?? ""}>{dep.status}</Badge>
                     </TableCell>
                     <TableCell className="text-sm">
-                      {d.schedule_enabled && intervalInfo ? (
+                      {dep.schedule_enabled && intervalInfo ? (
                         <Badge variant="outline" className="gap-1 font-normal">
                           <span>{intervalInfo.emoji}</span> {intervalInfo.label}
                         </Badge>
@@ -180,17 +185,17 @@ const MyAgents = () => {
                       )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {d.last_run_at
-                        ? formatDistanceToNow(new Date(d.last_run_at), { addSuffix: true })
+                      {dep.last_run_at
+                        ? formatDistanceToNow(new Date(dep.last_run_at), { addSuffix: true })
                         : "Never"}
                     </TableCell>
-                    <TableCell>{d.agents?.base_credit_cost ?? "—"}</TableCell>
+                    <TableCell>{dep.agents?.base_credit_cost ?? "—"}</TableCell>
                     <TableCell className="text-right space-x-1">
                       <Button
                         variant="ghost"
                         size="icon"
                         disabled={dep.status !== "active" || runningId === dep.id}
-                        onClick={() => handleRun(dep.id, d.agents?.base_credit_cost ?? 1)}
+                        onClick={() => handleRun(dep.id, dep.agents?.base_credit_cost ?? 1)}
                         title="Run agent"
                       >
                         {runningId === dep.id ? (
@@ -208,6 +213,7 @@ const MyAgents = () => {
                       >
                         <Clock size={16} />
                       </Button>
+                      {/* TODO: Add reconfigure flow */}
                       <Button
                         variant="ghost" size="icon"
                         onClick={() => updateStatus.mutate({
@@ -217,9 +223,30 @@ const MyAgents = () => {
                       >
                         {dep.status === "active" ? <Pause size={16} /> : <Play size={16} />}
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => deleteDep.mutate(dep.id)}>
-                        <Trash2 size={16} className="text-destructive" />
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <Trash2 size={16} className="text-destructive" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Deployment</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently delete this agent deployment and all its run history. This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteDep.mutate(dep.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </TableCell>
                   </TableRow>
                 );
@@ -234,9 +261,9 @@ const MyAgents = () => {
           open={!!scheduleDeployment}
           onOpenChange={(open) => !open && setScheduleDeployment(null)}
           deploymentId={scheduleDeployment.id}
-          currentInterval={(scheduleDeployment as any).schedule_interval}
-          scheduleEnabled={(scheduleDeployment as any).schedule_enabled ?? false}
-          nextRunAt={(scheduleDeployment as any).next_run_at}
+          currentInterval={scheduleDeployment.schedule_interval}
+          scheduleEnabled={scheduleDeployment.schedule_enabled ?? false}
+          nextRunAt={scheduleDeployment.next_run_at}
         />
       )}
     </div>
