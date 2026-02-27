@@ -393,19 +393,19 @@ const Index = () => {
       </section>
 
       {/* CTA Banner */}
-      <section className="bg-[hsl(0_3%_7%)] text-white py-16">
+      <section className="bg-sidebar text-sidebar-foreground py-16">
         <div className="max-w-3xl mx-auto px-4 text-center space-y-6">
           <h2 className="text-3xl lg:text-4xl font-medium font-display">
             Ready to <span className="text-gradient">Automate</span>?
           </h2>
-          <p className="text-white/60">
+          <p className="text-sidebar-foreground/60">
             Start with 25 free credits — no credit card required. Set up your first AI agent in under 2 minutes.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button variant="gradient" size="lg" asChild>
               <Link to="/signup">Start Free — 25 Credits Included</Link>
             </Button>
-            <p className="text-xs text-white/40">No credit card · Cancel anytime · Results in seconds</p>
+            <p className="text-xs text-sidebar-foreground/40">No credit card · Cancel anytime · Results in seconds</p>
           </div>
         </div>
       </section>
