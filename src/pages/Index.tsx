@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { Star, ArrowRight, Search, Settings, Rocket, Mail, PenLine, SearchCheck, Zap, Lock, Code } from "lucide-react";
+import { Star, ArrowRight, Search, Settings, Rocket, Mail, PenLine, SearchCheck, Zap, Lock } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { iconMap, defaultAgentIcon } from "@/lib/icons";
 import { APP_CATEGORIES } from "@/lib/categories";
@@ -129,6 +129,42 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Why Autonomux */}
+      <section className="py-16 bg-card border-y border-border">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
+          <div>
+            <Badge variant="accent" className="mb-3">Why Autonomux?</Badge>
+            <h2 className="text-2xl lg:text-3xl font-medium font-display">Not Another Chatbot. Not Another Workflow Tool.</h2>
+            <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">
+              ChatGPT gives you answers. Zapier connects your apps. Autonomux gives you <span className="font-medium text-foreground">workers</span> — AI agents that do complete tasks from start to finish.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6 text-left">
+            <Card className="border-border">
+              <CardContent className="p-5 space-y-2">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">ChatGPT</p>
+                <p className="text-sm text-muted-foreground">You ask a question, you get an answer. Then you copy-paste it somewhere. Repeat forever.</p>
+                <p className="text-xs text-destructive font-medium">Manual every time</p>
+              </CardContent>
+            </Card>
+            <Card className="border-border">
+              <CardContent className="p-5 space-y-2">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Zapier / Make</p>
+                <p className="text-sm text-muted-foreground">Connects apps together. But you need to build the workflow yourself. Steep learning curve.</p>
+                <p className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">Technical setup required</p>
+              </CardContent>
+            </Card>
+            <Card className="ring-2 ring-accent">
+              <CardContent className="p-5 space-y-2">
+                <p className="text-xs text-accent font-medium uppercase tracking-wider">Autonomux</p>
+                <p className="text-sm text-foreground">Pick an agent, set your preferences, click go. It does the whole task — blog posts, email replies, lead lists — delivered to your dashboard.</p>
+                <p className="text-xs text-green-600 dark:text-green-400 font-medium">Zero setup, instant results ✓</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       {/* How It Works */}
       <section id="how-it-works" className="py-20 lg:py-28 bg-background">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-12">
@@ -152,6 +188,34 @@ const Index = () => {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* See It In Action */}
+      <section className="py-16 bg-card border-y border-border">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
+          <div>
+            <Badge variant="accent" className="mb-3">See It In Action</Badge>
+            <h2 className="text-2xl lg:text-3xl font-medium font-display">From Click to Results in 30 Seconds</h2>
+          </div>
+          <div className="grid md:grid-cols-4 gap-4 text-left">
+            {[
+              { step: "1", title: "Pick an agent", desc: "Browse the marketplace and choose \"Blog Writer\"", emoji: "🎯" },
+              { step: "2", title: "Set preferences", desc: "Topic: \"AI in Healthcare\", Tone: Informative, 1000 words", emoji: "⚙️" },
+              { step: "3", title: "Click Start", desc: "One click — the agent starts working immediately", emoji: "▶️" },
+              { step: "4", title: "Get your blog post", desc: "Full SEO-optimized article with headings, ready to publish", emoji: "✅" },
+            ].map((s) => (
+              <div key={s.step} className="p-4 rounded-xl bg-background border space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{s.emoji}</span>
+                  <span className="text-xs font-medium text-accent">Step {s.step}</span>
+                </div>
+                <h3 className="text-sm font-medium">{s.title}</h3>
+                <p className="text-xs text-muted-foreground">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">Total time: under 60 seconds. Total cost: 2 credits (~$0.20).</p>
         </div>
       </section>
 
@@ -194,6 +258,42 @@ const Index = () => {
                 </Link>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      {/* Use Case Stories */}
+      <section className="py-16 bg-background">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <div className="text-center">
+            <Badge variant="accent" className="mb-3">Use Cases</Badge>
+            <h2 className="text-2xl lg:text-3xl font-medium font-display">How People Use Autonomux</h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            <Card>
+              <CardContent className="p-6 space-y-3">
+                <p className="text-2xl">📧</p>
+                <h3 className="font-medium">Freelancer, drowning in emails</h3>
+                <p className="text-sm text-muted-foreground">"I paste client emails into the Email Agent and get professional replies in my tone in 10 seconds. I used to spend an hour on email every morning."</p>
+                <p className="text-xs text-accent font-medium">Saves ~5 hours/week</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6 space-y-3">
+                <p className="text-2xl">✍️</p>
+                <h3 className="font-medium">Marketing team of one</h3>
+                <p className="text-sm text-muted-foreground">"I use the Blog Writer daily — give it a topic, get a full SEO post in 30 seconds. I schedule it to run every morning so I always have fresh content."</p>
+                <p className="text-xs text-accent font-medium">4 blog posts/day on autopilot</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6 space-y-3">
+                <p className="text-2xl">🔍</p>
+                <h3 className="font-medium">Sales rep building pipeline</h3>
+                <p className="text-sm text-muted-foreground">"The Lead Finder gives me 10 qualified leads with outreach angles every time I run it. Way faster than manual LinkedIn research."</p>
+                <p className="text-xs text-accent font-medium">50 leads/week with one click</p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -252,18 +352,61 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Pricing Preview */}
+      <section className="py-16 bg-secondary/30">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+          <div>
+            <Badge variant="accent" className="mb-3">Pricing</Badge>
+            <h2 className="text-2xl lg:text-3xl font-medium font-display">Simple, Honest Pricing</h2>
+            <p className="text-muted-foreground mt-2">Start free. Pay only when you need more.</p>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
+            <Card>
+              <CardContent className="p-5 text-center space-y-1">
+                <p className="text-2xl font-medium">$0</p>
+                <p className="text-sm font-medium">Free</p>
+                <p className="text-xs text-muted-foreground">25 credits included</p>
+                <p className="text-xs text-muted-foreground">≈ 12 blog posts</p>
+              </CardContent>
+            </Card>
+            <Card className="ring-1 ring-accent">
+              <CardContent className="p-5 text-center space-y-1">
+                <p className="text-2xl font-medium">$10</p>
+                <p className="text-sm font-medium">Starter Pack</p>
+                <p className="text-xs text-muted-foreground">100 credits</p>
+                <p className="text-xs text-muted-foreground">≈ 50 blog posts</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-5 text-center space-y-1">
+                <p className="text-2xl font-medium">$29</p>
+                <p className="text-sm font-medium">Pro Plan</p>
+                <p className="text-xs text-muted-foreground">200 credits/mo</p>
+                <p className="text-xs text-muted-foreground">Unlimited agents</p>
+              </CardContent>
+            </Card>
+          </div>
+          <Link to="/pricing" className="text-sm text-accent hover:underline inline-flex items-center gap-1">
+            See full pricing <ArrowRight size={14} />
+          </Link>
+        </div>
+      </section>
+
       {/* CTA Banner */}
-      <section className="bg-secondary/50 dark:bg-sidebar text-foreground dark:text-sidebar-foreground py-16">
+      <section className="bg-sidebar text-sidebar-foreground py-16">
         <div className="max-w-3xl mx-auto px-4 text-center space-y-6">
           <h2 className="text-3xl lg:text-4xl font-medium font-display">
             Ready to <span className="text-gradient">Automate</span>?
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-sidebar-foreground/60">
             Start with 25 free credits — no credit card required. Set up your first AI agent in under 2 minutes.
           </p>
-          <Button variant="gradient" size="lg" asChild>
-            <Link to="/signup">Get Started Free</Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button variant="gradient" size="lg" asChild>
+              <Link to="/signup">Start Free — 25 Credits Included</Link>
+            </Button>
+            <p className="text-xs text-sidebar-foreground/40">No credit card · Cancel anytime · Results in seconds</p>
+          </div>
         </div>
       </section>
     </div>

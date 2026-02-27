@@ -201,6 +201,7 @@ export type Database = {
       }
       runs: {
         Row: {
+          api_cost_cents: number | null
           completed_at: string | null
           created_at: string
           credits_used: number | null
@@ -208,11 +209,14 @@ export type Database = {
           error_message: string | null
           id: string
           input_summary: string | null
+          model_used: string | null
           output_summary: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["run_status"]
+          tokens_used: number | null
         }
         Insert: {
+          api_cost_cents?: number | null
           completed_at?: string | null
           created_at?: string
           credits_used?: number | null
@@ -220,11 +224,14 @@ export type Database = {
           error_message?: string | null
           id?: string
           input_summary?: string | null
+          model_used?: string | null
           output_summary?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["run_status"]
+          tokens_used?: number | null
         }
         Update: {
+          api_cost_cents?: number | null
           completed_at?: string | null
           created_at?: string
           credits_used?: number | null
@@ -232,9 +239,11 @@ export type Database = {
           error_message?: string | null
           id?: string
           input_summary?: string | null
+          model_used?: string | null
           output_summary?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["run_status"]
+          tokens_used?: number | null
         }
         Relationships: [
           {
