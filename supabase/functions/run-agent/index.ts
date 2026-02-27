@@ -6,6 +6,11 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function trackError(error: unknown, context?: string) {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(`[Autonomux Error]${context ? ` [${context}]` : ""}: ${message}`);
+}
+
 async function webSearch(query: string, count = 5): Promise<Array<{ title: string; url: string; description: string }>> {
   try {
     const braveKey = Deno.env.get("BRAVE_SEARCH_API_KEY");
@@ -20,7 +25,7 @@ async function webSearch(query: string, count = 5): Promise<Array<{ title: strin
     return (data.web?.results ?? []).map((r: any) => ({
       title: r.title, url: r.url, description: r.description,
     }));
-  } catch { return []; }
+  } catch (e) { trackError(e, "webSearch"); return []; }
 }
 
 function formatSearchResults(results: Array<{ title: string; url: string; description: string }>): string {
@@ -189,6 +194,15 @@ Deno.serve(async (req) => {
         });
       }
       userId = authUser.id;
+
+      // Check email verification for non-scheduled runs
+      const { data: { user: verifiedUser } } = await adminClient.auth.admin.getUserById(userId);
+      if (verifiedUser && !verifiedUser.email_confirmed_at) {
+        return new Response(
+          JSON.stringify({ error: "Please verify your email before running agents. Check your inbox." }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // Fetch deployment with agent
@@ -232,6 +246,29 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "Rate limit exceeded. Max 10 runs per minute per agent." }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Daily run limit: 50 runs per day per user
+    const oneDayAgo = new Date(Date.now() - 86400000).toISOString();
+    const { data: userDeployments } = await adminClient
+      .from("deployments")
+      .select("id")
+      .eq("user_id", userId);
+    const userDepIds = (userDeployments ?? []).map(d => d.id);
+
+    if (userDepIds.length > 0) {
+      const { count: dailyRunCount } = await adminClient
+        .from("runs")
+        .select("id", { count: "exact", head: true })
+        .in("deployment_id", userDepIds)
+        .gte("created_at", oneDayAgo);
+
+      if ((dailyRunCount ?? 0) >= 50) {
+        return new Response(
+          JSON.stringify({ error: "Daily run limit reached (50 runs/day). Upgrade your plan for higher limits." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     const agent = deployment.agents;
@@ -309,93 +346,93 @@ Deno.serve(async (req) => {
     const config = (deployment.config as Record<string, any>) ?? {};
     const { system, user: userMsg } = await getPrompt(agent.category, agent.slug, config);
 
-    // Call OpenRouter
-    try {
-      const llmRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${openRouterKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "anthropic/claude-sonnet-4",
-          messages: [
-            { role: "system", content: system },
-            { role: "user", content: userMsg },
-          ],
-          max_tokens: 4000,
-        }),
-      });
+    // Call OpenRouter with model fallback
+    const MODELS = ["anthropic/claude-sonnet-4", "openai/gpt-4o-mini"];
+    let llmData: any = null;
+    let llmError: string | null = null;
+    let modelUsed = MODELS[0];
 
-      const llmData = await llmRes.json();
-
-      if (!llmRes.ok || llmData.error) {
-        const errMsg = llmData.error?.message || JSON.stringify(llmData.error) || "LLM request failed";
-
-        await adminClient.rpc("refund_credits", { p_user_id: userId, p_amount: creditCost });
-        await adminClient.from("transactions").insert({
-          user_id: userId,
-          type: "refund",
-          credits: creditCost,
-          amount_cents: 0,
+    for (const model of MODELS) {
+      try {
+        const llmRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${openRouterKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: system },
+              { role: "user", content: userMsg },
+            ],
+            max_tokens: 4000,
+          }),
         });
 
-        await adminClient
-          .from("runs")
-          .update({ status: "failed", error_message: errMsg, completed_at: new Date().toISOString() })
-          .eq("id", run.id);
-
-        return new Response(JSON.stringify({ error: errMsg, run }), {
-          status: 502,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        const data = await llmRes.json();
+        if (llmRes.ok && !data.error) {
+          llmData = data;
+          modelUsed = model;
+          break;
+        }
+        llmError = data.error?.message || JSON.stringify(data.error) || "LLM request failed";
+        trackError(llmError, `model-fallback:${model}`);
+      } catch (err: any) {
+        llmError = err.message;
+        trackError(err, `model-fallback:${model}`);
       }
+    }
 
-      const outputContent = llmData.choices?.[0]?.message?.content ?? "";
-      const outputSummary = outputContent.substring(0, 5000);
-
-      await adminClient
-        .from("runs")
-        .update({
-          status: "success",
-          output_summary: outputSummary,
-          input_summary: userMsg.substring(0, 500),
-          completed_at: new Date().toISOString(),
-          credits_used: creditCost,
-        })
-        .eq("id", run.id);
-
-      await adminClient
-        .from("deployments")
-        .update({ last_run_at: new Date().toISOString() })
-        .eq("id", deployment_id);
-
-      const { data: updatedRun } = await adminClient.from("runs").select("*").eq("id", run.id).single();
-
-      return new Response(JSON.stringify({ run: updatedRun }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    } catch (llmErr) {
+    if (!llmData) {
+      // All models failed — refund and record failure
       await adminClient.rpc("refund_credits", { p_user_id: userId, p_amount: creditCost });
       await adminClient.from("transactions").insert({
-        user_id: userId,
-        type: "refund",
-        credits: creditCost,
-        amount_cents: 0,
+        user_id: userId, type: "refund", credits: creditCost, amount_cents: 0,
       });
+      await adminClient.from("runs").update({
+        status: "failed", error_message: llmError || "All models failed", completed_at: new Date().toISOString(),
+      }).eq("id", run.id);
 
-      await adminClient
-        .from("runs")
-        .update({ status: "failed", error_message: llmErr.message, completed_at: new Date().toISOString() })
-        .eq("id", run.id);
-
-      return new Response(JSON.stringify({ error: llmErr.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ error: llmError }), {
+        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Extract usage data
+    const tokensUsed = llmData.usage?.total_tokens ?? 0;
+    const apiCostCents = Math.ceil(tokensUsed / 1000);
+
+    const outputContent = llmData.choices?.[0]?.message?.content ?? "";
+    const outputSummary = outputContent.substring(0, 5000);
+
+    await adminClient
+      .from("runs")
+      .update({
+        status: "success",
+        output_summary: outputSummary,
+        input_summary: userMsg.substring(0, 500),
+        completed_at: new Date().toISOString(),
+        credits_used: creditCost,
+        api_cost_cents: apiCostCents,
+        model_used: modelUsed,
+        tokens_used: tokensUsed,
+      })
+      .eq("id", run.id);
+
+    await adminClient
+      .from("deployments")
+      .update({ last_run_at: new Date().toISOString() })
+      .eq("id", deployment_id);
+
+    const { data: updatedRun } = await adminClient.from("runs").select("*").eq("id", run.id).single();
+
+    return new Response(JSON.stringify({ run: updatedRun }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (err) {
+    trackError(err, "run-agent");
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
