@@ -86,7 +86,7 @@ const SignUp = () => {
         <CardFooter className="justify-center">
           <p className="text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Link to="/signin" className="text-accent hover:underline">Sign in</Link>
+            <Link to="/signin" className="text-primary hover:underline">Sign in</Link>
           </p>
         </CardFooter>
       </Card>

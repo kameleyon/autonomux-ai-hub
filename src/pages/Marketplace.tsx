@@ -80,7 +80,7 @@ const Marketplace = () => {
       <div className="flex items-center justify-between">
         <h3 className="font-medium">Categories</h3>
         {selectedCategories.length > 0 && (
-          <button onClick={() => setSelectedCategories([])} className="text-xs text-accent hover:underline">
+          <button onClick={() => setSelectedCategories([])} className="text-xs text-primary hover:underline">
             Clear
           </button>
         )}

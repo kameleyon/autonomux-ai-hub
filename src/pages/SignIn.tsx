@@ -58,7 +58,7 @@ const SignIn = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <Link to="/forgot-password" className="text-xs text-accent hover:underline">Forgot password?</Link>
+                <Link to="/forgot-password" className="text-xs text-primary hover:underline">Forgot password?</Link>
               </div>
               <Input id="password" type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
@@ -78,7 +78,7 @@ const SignIn = () => {
         <CardFooter className="justify-center">
           <p className="text-sm text-muted-foreground">
             Don't have an account?{" "}
-            <Link to="/signup" className="text-accent hover:underline">Sign up</Link>
+            <Link to="/signup" className="text-primary hover:underline">Sign up</Link>
           </p>
         </CardFooter>
       </Card>
