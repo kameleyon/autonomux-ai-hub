@@ -459,6 +459,17 @@ export type Database = {
         Args: { p_amount: number; p_user_id: string }
         Returns: number
       }
+      schedule_cron_job: {
+        Args: {
+          p_auth_header: string
+          p_cron_expr: string
+          p_deployment_id: string
+          p_job_name: string
+          p_url: string
+        }
+        Returns: number
+      }
+      unschedule_cron_job: { Args: { p_job_name: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
