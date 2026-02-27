@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { Star, ArrowRight, Search, Settings, Rocket } from "lucide-react";
+import { Star, ArrowRight, Search, Settings, Rocket, Mail, PenLine, SearchCheck, Zap, Lock, Code } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { iconMap, defaultAgentIcon } from "@/lib/icons";
 import { APP_CATEGORIES } from "@/lib/categories";
@@ -111,17 +111,17 @@ const Index = () => {
           </p>
           <div className="grid sm:grid-cols-3 gap-6 pt-4">
             <div className="p-4 rounded-xl bg-card border space-y-2">
-              <p className="text-2xl">📧</p>
+              <Mail size={24} className="text-primary" />
               <h3 className="font-medium text-sm">Email Agent</h3>
               <p className="text-xs text-muted-foreground">Paste an email you received → get a professional reply in your tone, instantly</p>
             </div>
             <div className="p-4 rounded-xl bg-card border space-y-2">
-              <p className="text-2xl">✍️</p>
+              <PenLine size={24} className="text-primary" />
               <h3 className="font-medium text-sm">Blog Writer</h3>
               <p className="text-xs text-muted-foreground">Tell it a topic → get a full SEO blog post with headings and structure in 30 seconds</p>
             </div>
             <div className="p-4 rounded-xl bg-card border space-y-2">
-              <p className="text-2xl">🔍</p>
+              <SearchCheck size={24} className="text-primary" />
               <h3 className="font-medium text-sm">Lead Finder</h3>
               <p className="text-xs text-muted-foreground">Set your target market → get a list of qualified leads with outreach angles</p>
             </div>
@@ -204,21 +204,21 @@ const Index = () => {
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center space-y-3 p-6">
               <div className="w-12 h-12 mx-auto rounded-full bg-accent/10 flex items-center justify-center">
-                <span className="text-xl">⚡</span>
+                <Zap size={22} className="text-accent" />
               </div>
               <h3 className="font-medium">Results in Seconds</h3>
               <p className="text-sm text-muted-foreground">Every agent returns results in under 30 seconds. No waiting, no queues — just instant output.</p>
             </div>
             <div className="text-center space-y-3 p-6">
               <div className="w-12 h-12 mx-auto rounded-full bg-accent/10 flex items-center justify-center">
-                <span className="text-xl">🔒</span>
+                <Lock size={22} className="text-accent" />
               </div>
               <h3 className="font-medium">Your Data Stays Private</h3>
               <p className="text-sm text-muted-foreground">Credentials are AES-256 encrypted. We never store anything in plain text. Your keys, your control.</p>
             </div>
             <div className="text-center space-y-3 p-6">
               <div className="w-12 h-12 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-xl">🚀</span>
+                <Rocket size={22} className="text-primary" />
               </div>
               <h3 className="font-medium">No Code Required</h3>
               <p className="text-sm text-muted-foreground">Pick an agent, set your preferences with simple dropdowns, click go. That's it — no programming, no setup guides.</p>
