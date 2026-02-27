@@ -19,7 +19,7 @@ const typeIcons: Record<string, any> = {
 };
 
 const typeColors: Record<string, string> = {
-  info: "text-primary",
+  info: "text-accent",
   warning: "text-warning",
   error: "text-destructive",
 };

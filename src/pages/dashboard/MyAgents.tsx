@@ -201,7 +201,7 @@ const MyAgents = () => {
                         {runningId === dep.id ? (
                           <Loader2 size={16} className="animate-spin" />
                         ) : (
-                          <Zap size={16} className="text-primary" />
+                          <Zap size={16} className="text-accent" />
                         )}
                       </Button>
                       <Button
