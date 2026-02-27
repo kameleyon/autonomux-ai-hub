@@ -80,6 +80,60 @@ export type Database = {
         }
         Relationships: []
       }
+      approval_requests: {
+        Row: {
+          action_description: string
+          action_payload: Json | null
+          created_at: string
+          deployment_id: string
+          expires_at: string
+          id: string
+          responded_at: string | null
+          run_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          action_description: string
+          action_payload?: Json | null
+          created_at?: string
+          deployment_id: string
+          expires_at?: string
+          id?: string
+          responded_at?: string | null
+          run_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          action_description?: string
+          action_payload?: Json | null
+          created_at?: string
+          deployment_id?: string
+          expires_at?: string
+          id?: string
+          responded_at?: string | null
+          run_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_requests_deployment_id_fkey"
+            columns: ["deployment_id"]
+            isOneToOne: false
+            referencedRelation: "deployments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approval_requests_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deployments: {
         Row: {
           agent_id: string
@@ -173,6 +227,10 @@ export type Database = {
           credits_balance: number
           display_name: string | null
           id: string
+          notification_email: string | null
+          notify_on_run_complete: boolean | null
+          notify_on_run_failed: boolean | null
+          notify_on_schedule_fail: boolean | null
           plan_tier: Database["public"]["Enums"]["plan_tier"]
           updated_at: string
           user_id: string
@@ -183,6 +241,10 @@ export type Database = {
           credits_balance?: number
           display_name?: string | null
           id?: string
+          notification_email?: string | null
+          notify_on_run_complete?: boolean | null
+          notify_on_run_failed?: boolean | null
+          notify_on_schedule_fail?: boolean | null
           plan_tier?: Database["public"]["Enums"]["plan_tier"]
           updated_at?: string
           user_id: string
@@ -193,6 +255,10 @@ export type Database = {
           credits_balance?: number
           display_name?: string | null
           id?: string
+          notification_email?: string | null
+          notify_on_run_complete?: boolean | null
+          notify_on_run_failed?: boolean | null
+          notify_on_schedule_fail?: boolean | null
           plan_tier?: Database["public"]["Enums"]["plan_tier"]
           updated_at?: string
           user_id?: string

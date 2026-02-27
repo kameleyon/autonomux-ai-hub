@@ -32,6 +32,15 @@ const SignUp = () => {
       toast.error(error.message);
     } else {
       toast.success("Check your email to confirm your account!");
+      // Fire welcome email (fire-and-forget)
+      supabase.functions.invoke("send-email", {
+        body: {
+          to: email,
+          subject: "Welcome to Autonomux 🦎 — Your 25 free credits are ready",
+          text: `Welcome to Autonomux!\n\nYour account is ready with 25 free credits.\n\nGet started: https://autonomux.lovable.app/marketplace`,
+          html: `<div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;"><div style="background:linear-gradient(135deg,#E81E25,#F7941D);padding:32px;border-radius:12px 12px 0 0;text-align:center;"><h1 style="color:white;margin:0;font-size:28px;">Welcome to Autonomux 🦎</h1><p style="color:rgba(255,255,255,0.85);margin-top:8px;">Your AI Workforce, One Click Away</p></div><div style="padding:32px;border:1px solid #E5E7EB;border-top:none;border-radius:0 0 12px 12px;text-align:center;"><p style="font-size:48px;margin:0;">🎉</p><h2 style="color:#1F2937;">You have 25 free credits</h2><p style="color:#6B7280;">That's enough to write 12 blog posts, reply to emails, find leads, and more — all for free.</p><a href="https://autonomux.lovable.app/marketplace" style="display:inline-block;background:linear-gradient(135deg,#E81E25,#F7941D);color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;margin-top:16px;">Browse Agents →</a><p style="color:#9CA3AF;font-size:12px;margin-top:32px;">No credit card required. Cancel anytime.</p></div></div>`,
+        },
+      }).catch(() => {});
       navigate("/signin");
     }
   };
