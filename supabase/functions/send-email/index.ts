@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Autonomux <onboarding@resend.dev>",
+        from: "Autonomux <noreply@autonomux.io>",
         to,
         subject,
         html: html || undefined,
