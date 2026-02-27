@@ -257,7 +257,7 @@ const DeployWizard = () => {
               ) : (
                 <>
                   <div className="flex items-center gap-2 p-3 rounded-lg bg-muted text-sm">
-                    <Shield size={16} className="text-primary shrink-0" />
+                    <Shield size={16} className="text-accent shrink-0" />
                     <span className="text-muted-foreground">Your credentials are encrypted and stored securely.</span>
                   </div>
                   {requiredCreds.map((cred) => (
@@ -275,7 +275,7 @@ const DeployWizard = () => {
                         href={`https://www.google.com/search?q=how+to+get+${encodeURIComponent(cred.replace(/_/g, " "))}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs text-primary hover:underline"
+                        className="text-xs text-accent hover:underline"
                       >
                         How to get this →
                       </a>
