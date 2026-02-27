@@ -64,8 +64,8 @@ const DashboardSidebar = () => {
 
   return (
     <Sidebar collapsible="icon">
-      {/* Brand */}
-      <SidebarHeader className="p-3" />
+      {/* Spacer to align with header height */}
+      <SidebarHeader className="h-12 shrink-0" />
 
       {/* Navigation */}
       <SidebarContent>

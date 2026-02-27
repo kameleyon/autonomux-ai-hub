@@ -95,13 +95,13 @@
     --input: 0 3% 18%;
     --ring: 32 93% 54%;
 
-    --sidebar-background: 0 3% 7%;
+    --sidebar-background: 0 3% 10%;
     --sidebar-foreground: 0 0% 96%;
     --sidebar-primary: 358 81% 51%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 3% 14%;
+    --sidebar-accent: 0 3% 16%;
     --sidebar-accent-foreground: 0 0% 96%;
-    --sidebar-border: 0 3% 18%;
+    --sidebar-border: 0 3% 20%;
     --sidebar-ring: 32 93% 54%;
 
     --gradient-from: 358 81% 51%;
