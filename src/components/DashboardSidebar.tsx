@@ -17,9 +17,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
   SidebarSeparator,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
@@ -68,8 +66,6 @@ const DashboardSidebar = () => {
     <Sidebar collapsible="icon">
       {/* Brand */}
       <SidebarHeader className="p-3" />
-
-      <SidebarSeparator />
 
       {/* Navigation */}
       <SidebarContent>
@@ -149,7 +145,6 @@ const DashboardSidebar = () => {
         </SidebarMenu>
       </SidebarFooter>
 
-      <SidebarRail />
     </Sidebar>
   );
 };
