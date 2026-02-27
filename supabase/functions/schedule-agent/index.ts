@@ -138,22 +138,20 @@ Deno.serve(async (req) => {
       // Schedule the cron job via SQL
       const scheduleSQL = `SELECT cron.schedule('${jobName}', '${cronExpr}', $$SELECT net.http_post(url := '${supabaseUrl}/functions/v1/run-agent', headers := '{"Content-Type": "application/json", "Authorization": "Bearer ${serviceRoleKey}"}'::jsonb, body := '{"deployment_id": "${deployment_id}", "scheduled": true}'::jsonb) AS request_id;$$)`;
 
-      const { data: cronResult, error: cronErr } = await adminClient.rpc("exec_sql", { sql: scheduleSQL }).catch(async () => {
-        const res = await fetch(`${supabaseUrl}/rest/v1/rpc/exec_sql`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${serviceRoleKey}`,
-            apikey: serviceRoleKey,
-            "Content-Type": "application/json",
-            Prefer: "return=representation",
-          },
-          body: JSON.stringify({ sql: scheduleSQL }),
-        });
-        if (!res.ok) {
-          return { data: null, error: "Could not schedule" };
-        }
-        return { data: await res.json(), error: null };
+      const res = await fetch(`${supabaseUrl}/rest/v1/rpc/exec_sql`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${serviceRoleKey}`,
+          apikey: serviceRoleKey,
+          "Content-Type": "application/json",
+          Prefer: "return=representation",
+        },
+        body: JSON.stringify({ sql: scheduleSQL }),
       });
+      if (!res.ok) {
+        const errBody = await res.text();
+        console.error("exec_sql failed:", errBody);
+      }
 
       // Calculate next_run_at (approximate)
       const now = new Date();
