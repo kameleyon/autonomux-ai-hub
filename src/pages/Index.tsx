@@ -124,7 +124,7 @@ const Index = () => {
       </section>
 
       {/* Featured Agents */}
-      <section className="py-20 bg-secondary/30">
+      <section className="py-20 bg-secondary/30 dark:bg-sidebar-accent">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           <div className="flex items-end justify-between">
             <div>
@@ -167,7 +167,7 @@ const Index = () => {
       </section>
 
       {/* Categories */}
-      <section className="py-20 bg-background">
+      <section className="py-20 bg-background dark:bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           <div className="text-center">
             <Badge variant="accent" className="mb-4">Categories</Badge>
@@ -192,12 +192,12 @@ const Index = () => {
       </section>
 
       {/* CTA Banner */}
-      <section className="bg-foreground dark:bg-sidebar text-background dark:text-sidebar-foreground py-16">
+      <section className="bg-secondary/50 dark:bg-sidebar-accent text-foreground dark:text-sidebar-foreground py-16">
         <div className="max-w-3xl mx-auto px-4 text-center space-y-6">
           <h2 className="text-3xl lg:text-4xl font-medium font-display">
             Ready to <span className="text-gradient">Automate</span>?
           </h2>
-          <p className="opacity-60">
+          <p className="text-muted-foreground">
             Join thousands of teams using Autonomux to scale their operations with AI agents.
           </p>
           <Button variant="gradient" size="lg" asChild>
