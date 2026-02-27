@@ -477,14 +477,33 @@ Deno.serve(async (req) => {
       .update({ last_run_at: new Date().toISOString() })
       .eq("id", deployment_id);
 
-    // Send success email notification
+    // Send success email notification with full content
     if (userEmail && notifProfile?.notify_on_run_complete) {
-      const truncatedOutput = outputContent.substring(0, 500);
+      // Convert markdown-style output to basic HTML for email rendering
+      const contentHtml = outputContent
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\n/g, "<br>");
+
       sendEmailNotification({
         to: userEmail,
-        subject: `✅ ${agent.name} completed successfully`,
-        text: `Your ${agent.name} agent just finished running.\n\nResult preview:\n${truncatedOutput}${outputContent.length > 500 ? "..." : ""}\n\nView full results: ${dashboardUrl}`,
-        html: `<div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;"><div style="background:linear-gradient(135deg,#E81E25,#F7941D);padding:24px;border-radius:12px 12px 0 0;"><h1 style="color:white;margin:0;font-size:20px;">✅ Agent Run Complete</h1></div><div style="padding:24px;border:1px solid #E5E7EB;border-top:none;border-radius:0 0 12px 12px;"><p style="color:#374151;font-size:16px;"><strong>${agent.name}</strong> just finished running.</p><div style="background:#F9FAFB;border-left:4px solid #F7941D;padding:16px;border-radius:4px;margin:16px 0;"><p style="color:#6B7280;font-size:14px;margin:0;white-space:pre-wrap;">${truncatedOutput}${outputContent.length > 500 ? "..." : ""}</p></div><a href="${dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#E81E25,#F7941D);color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:8px;">View Full Results →</a><p style="color:#9CA3AF;font-size:12px;margin-top:24px;">This run used ${creditCost} credits. <a href="${appUrl}/dashboard/billing" style="color:#F7941D;">View billing</a></p></div></div>`,
+        subject: `✅ ${agent.name} completed — here's your content`,
+        text: `Your ${agent.name} agent just finished running.\n\nHere's what it produced:\n\n${outputContent}\n\n---\nView in dashboard: ${dashboardUrl}`,
+        html: `<div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;">
+          <div style="background:linear-gradient(135deg,#E81E25,#F7941D);padding:24px;border-radius:12px 12px 0 0;">
+            <h1 style="color:white;margin:0;font-size:20px;">✅ ${agent.name} — Done!</h1>
+            <p style="color:rgba(255,255,255,0.85);margin:4px 0 0;font-size:14px;">Your content is ready</p>
+          </div>
+          <div style="padding:24px;border:1px solid #E5E7EB;border-top:none;border-radius:0 0 12px 12px;">
+            <p style="color:#374151;font-size:16px;margin-bottom:16px;">Here's the full output from <strong>${agent.name}</strong>:</p>
+            <div style="background:#F9FAFB;border-left:4px solid #F7941D;padding:20px;border-radius:4px;margin:0 0 20px;">
+              <div style="color:#374151;font-size:14px;line-height:1.7;">${contentHtml}</div>
+            </div>
+            <a href="${dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#E81E25,#F7941D);color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">View in Dashboard →</a>
+            <p style="color:#9CA3AF;font-size:12px;margin-top:24px;">This run used ${creditCost} credit${creditCost > 1 ? "s" : ""}. <a href="${appUrl}/dashboard/billing" style="color:#F7941D;">View billing</a></p>
+          </div>
+        </div>`,
       });
     }
 
