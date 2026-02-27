@@ -21,6 +21,24 @@ const INTERVALS: Record<string, { cron: string; label: string }> = {
   weekly: { cron: "0 9 * * 1", label: "Weekly" },
 };
 
+// Use direct fetch for RPC calls to avoid SDK .catch() issues
+async function callRpc(supabaseUrl: string, serviceRoleKey: string, fnName: string, params: Record<string, unknown>) {
+  const res = await fetch(`${supabaseUrl}/rest/v1/rpc/${fnName}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": serviceRoleKey,
+      "Authorization": `Bearer ${serviceRoleKey}`,
+    },
+    body: JSON.stringify(params),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`RPC ${fnName} failed (${res.status}): ${text}`);
+  }
+  try { return JSON.parse(text); } catch { return text; }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -67,10 +85,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const adminClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     // Verify ownership
     const { data: deployment, error: depErr } = await adminClient
@@ -93,6 +111,9 @@ Deno.serve(async (req) => {
       });
     }
 
+    const sanitizedId = deployment_id.replace(/[^a-f0-9-]/gi, "");
+    const jobName = `autonomux_deployment_${sanitizedId}`;
+
     if (action === "enable") {
       if (!interval || !INTERVALS[interval]) {
         return new Response(JSON.stringify({ error: "Invalid interval" }), {
@@ -108,10 +129,6 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const sanitizedId = deployment_id.replace(/[^a-f0-9-]/gi, "");
-      const jobName = `autonomux_deployment_${sanitizedId}`;
 
       // Remove existing job if any
       const { data: existingJob } = await adminClient
@@ -121,21 +138,26 @@ Deno.serve(async (req) => {
         .single();
 
       if (existingJob?.cron_job_id) {
-        try { await adminClient.rpc("unschedule_cron_job", { p_job_name: jobName }); } catch {}
+        try {
+          await callRpc(supabaseUrl, serviceRoleKey, "unschedule_cron_job", { p_job_name: jobName });
+        } catch (e) {
+          console.warn("unschedule_cron_job warning:", e.message);
+        }
         await adminClient.from("scheduled_jobs").delete().eq("deployment_id", deployment_id);
       }
 
-      // Schedule the cron job via RPC
-      const { data: cronJobId, error: cronErr } = await adminClient.rpc("schedule_cron_job", {
-        p_job_name: jobName,
-        p_cron_expr: cronExpr,
-        p_url: `${supabaseUrl}/functions/v1/run-agent`,
-        p_auth_header: serviceRoleKey,
-        p_deployment_id: deployment_id,
-      });
-
-      if (cronErr) {
-        console.error("schedule_cron_job failed:", JSON.stringify(cronErr));
+      // Schedule the cron job via direct REST RPC
+      let cronJobId: number | null = null;
+      try {
+        cronJobId = await callRpc(supabaseUrl, serviceRoleKey, "schedule_cron_job", {
+          p_job_name: jobName,
+          p_cron_expr: cronExpr,
+          p_url: `${supabaseUrl}/functions/v1/run-agent`,
+          p_auth_header: serviceRoleKey,
+          p_deployment_id: deployment_id,
+        });
+      } catch (e) {
+        console.error("schedule_cron_job failed:", e.message);
         return new Response(JSON.stringify({ error: "Failed to create schedule" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -144,7 +166,7 @@ Deno.serve(async (req) => {
 
       // Calculate next_run_at (approximate)
       const now = new Date();
-      let nextRun = new Date(now);
+      const nextRun = new Date(now);
       switch (interval) {
         case "every_15_min": nextRun.setMinutes(nextRun.getMinutes() + 15); break;
         case "every_hour": nextRun.setHours(nextRun.getHours() + 1, 0, 0, 0); break;
@@ -179,10 +201,11 @@ Deno.serve(async (req) => {
     }
 
     if (action === "disable") {
-      const sanitizedId = deployment_id.replace(/[^a-f0-9-]/gi, "");
-      const jobName = `autonomux_deployment_${sanitizedId}`;
-
-      try { await adminClient.rpc("unschedule_cron_job", { p_job_name: jobName }); } catch {}
+      try {
+        await callRpc(supabaseUrl, serviceRoleKey, "unschedule_cron_job", { p_job_name: jobName });
+      } catch (e) {
+        console.warn("unschedule_cron_job warning:", e.message);
+      }
 
       await adminClient
         .from("deployments")
