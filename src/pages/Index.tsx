@@ -40,14 +40,14 @@ const Index = () => {
 
   return (
     <div className="bg-background">
-      {/* Hero — dark */}
-      <section className="relative bg-sidebar text-sidebar-foreground overflow-hidden">
+      {/* Hero */}
+      <section className="relative bg-background dark:bg-sidebar text-foreground dark:text-sidebar-foreground overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32 flex flex-col lg:flex-row items-center gap-12" style={{ minHeight: "85vh" }}>
           <div className="flex-1 text-center lg:text-left space-y-6">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-medium font-display tracking-tight leading-tight">
               Your <span className="text-gradient">AI Workforce</span>,<br />One Click Away
             </h1>
-            <p className="text-lg text-sidebar-foreground/60 max-w-xl mx-auto lg:mx-0">
+            <p className="text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0">
               Deploy intelligent AI agents that automate your workflows — from lead generation to customer support, content creation to data analysis.
             </p>
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4">
@@ -56,7 +56,7 @@ const Index = () => {
               </Button>
               <Button
                 size="lg"
-                className="bg-sidebar-accent border border-sidebar-foreground/40 text-sidebar-foreground hover:bg-sidebar-foreground/10"
+                className="bg-secondary border border-border text-foreground hover:bg-secondary/80 dark:bg-sidebar-accent dark:border-sidebar-foreground/40 dark:text-sidebar-foreground dark:hover:bg-sidebar-foreground/10"
                 onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })}
               >
                 How It Works
@@ -71,7 +71,7 @@ const Index = () => {
               ].map((s) => (
                 <div key={s.label} className="text-center animate-fade-in">
                   <p className="text-2xl font-medium text-gradient">{s.value}</p>
-                  <p className="text-xs text-sidebar-foreground/50">{s.label}</p>
+                  <p className="text-xs text-muted-foreground">{s.label}</p>
                 </div>
               ))}
             </div>
@@ -79,16 +79,16 @@ const Index = () => {
 
           {/* Glowing agent card mockup */}
           <div className="flex-1 flex justify-center">
-            <Card className="w-96 bg-sidebar-accent backdrop-blur border-sidebar-border" style={{ boxShadow: "0 0 60px 20px hsla(358, 81%, 51%, 0.15), 0 0 100px 40px hsla(32, 93%, 54%, 0.1)" }}>
+            <Card className="w-96 bg-card dark:bg-sidebar-accent backdrop-blur border-border dark:border-sidebar-border" style={{ boxShadow: "0 0 60px 20px hsla(358, 81%, 51%, 0.15), 0 0 100px 40px hsla(32, 93%, 54%, 0.1)" }}>
               <CardContent className="p-6 space-y-4">
                 <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white">
                   <Rocket size={28} />
                 </div>
-                <h3 className="font-medium text-lg text-sidebar-foreground">AI Agent</h3>
-                <p className="text-sm text-sidebar-foreground/50">Automate any task with a single click. Powered by AI.</p>
+                <h3 className="font-medium text-lg text-card-foreground">AI Agent</h3>
+                <p className="text-sm text-muted-foreground">Automate any task with a single click. Powered by AI.</p>
                 <div className="flex gap-2">
                   <Badge variant="accent">Marketing</Badge>
-                  <Badge className="bg-sidebar-accent text-sidebar-foreground/70 border-0">3 credits</Badge>
+                  <Badge className="bg-secondary dark:bg-sidebar-accent text-muted-foreground border-0">3 credits</Badge>
                 </div>
                 <Button variant="gradient" className="w-full" size="sm">Deploy Now</Button>
               </CardContent>
@@ -192,12 +192,12 @@ const Index = () => {
       </section>
 
       {/* CTA Banner */}
-      <section className="bg-sidebar text-sidebar-foreground py-16">
+      <section className="bg-foreground dark:bg-sidebar text-background dark:text-sidebar-foreground py-16">
         <div className="max-w-3xl mx-auto px-4 text-center space-y-6">
           <h2 className="text-3xl lg:text-4xl font-medium font-display">
             Ready to <span className="text-gradient">Automate</span>?
           </h2>
-          <p className="text-sidebar-foreground/60">
+          <p className="opacity-60">
             Join thousands of teams using Autonomux to scale their operations with AI agents.
           </p>
           <Button variant="gradient" size="lg" asChild>
