@@ -353,7 +353,7 @@ const Index = () => {
       </section>
 
       {/* Pricing Preview */}
-      <section className="py-16 bg-secondary/30">
+      <section className="py-16 bg-muted">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
           <div>
             <Badge variant="accent" className="mb-3">Pricing</Badge>
