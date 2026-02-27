@@ -44,13 +44,13 @@
 
     --radius: 0.5rem;
 
-    --sidebar-background: 20 15% 10%;
+    --sidebar-background: 25 25% 6%;
     --sidebar-foreground: 30 10% 96%;
     --sidebar-primary: 32 93% 54%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 20 12% 14%;
+    --sidebar-accent: 25 20% 10%;
     --sidebar-accent-foreground: 30 10% 96%;
-    --sidebar-border: 20 10% 20%;
+    --sidebar-border: 25 15% 15%;
     --sidebar-ring: 32 93% 54%;
 
     --gradient-from: 358 81% 51%;
@@ -61,7 +61,7 @@
   }
 
   .dark {
-    --background: 20 15% 8%;
+    --background: 25 25% 6%;
     --foreground: 30 10% 96%;
 
     --card: 20 12% 14%;
