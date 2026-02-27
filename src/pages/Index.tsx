@@ -131,7 +131,7 @@ const Index = () => {
               <Badge variant="accent" className="mb-4">Featured</Badge>
               <h2 className="text-3xl font-medium font-display">Top-Rated Agents</h2>
             </div>
-            <Link to="/marketplace" className="text-sm text-primary hover:underline flex items-center gap-1">
+            <Link to="/marketplace" className="text-sm text-accent hover:underline flex items-center gap-1">
               View All <ArrowRight size={14} />
             </Link>
           </div>
