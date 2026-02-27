@@ -74,6 +74,19 @@ const DeployWizard = () => {
   });
 
   useEffect(() => {
+    if (agent && Object.keys(config).length === 0) {
+      const s = agent.config_schema as { fields?: Array<{ name: string; default?: string | number }> } | null;
+      const defaults: Record<string, string> = {};
+      (s?.fields ?? []).forEach((f) => {
+        if (f.default !== undefined && f.default !== "") {
+          defaults[f.name] = String(f.default);
+        }
+      });
+      if (Object.keys(defaults).length > 0) setConfig(defaults);
+    }
+  }, [agent]);
+
+  useEffect(() => {
     if (deployed) {
       confetti({
         particleCount: 100,
