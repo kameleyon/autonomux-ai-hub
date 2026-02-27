@@ -479,12 +479,41 @@ Deno.serve(async (req) => {
 
     // Send success email notification with full content
     if (userEmail && notifProfile?.notify_on_run_complete) {
-      // Convert markdown-style output to basic HTML for email rendering
-      const contentHtml = outputContent
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/\n/g, "<br>");
+      // Convert markdown to HTML for email rendering
+      const escHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const mdToHtml = (md: string): string => {
+        return md
+          .split(/\n\n+/)
+          .map((block) => {
+            const trimmed = block.trim();
+            if (!trimmed) return "";
+            // Headings
+            if (trimmed.startsWith("### ")) return `<h3 style="font-size:16px;font-weight:700;margin:16px 0 8px;color:#1F2937;">${escHtml(trimmed.slice(4))}</h3>`;
+            if (trimmed.startsWith("## ")) return `<h2 style="font-size:18px;font-weight:700;margin:20px 0 8px;color:#1F2937;">${escHtml(trimmed.slice(3))}</h2>`;
+            if (trimmed.startsWith("# ")) return `<h1 style="font-size:22px;font-weight:700;margin:24px 0 10px;color:#111827;">${escHtml(trimmed.slice(2))}</h1>`;
+            // Bullet lists
+            const lines = trimmed.split("\n");
+            if (lines.every((l) => /^[-*]\s/.test(l.trim()))) {
+              const items = lines.map((l) => `<li style="margin:4px 0;">${inlineFormat(escHtml(l.trim().replace(/^[-*]\s/, "")))}</li>`).join("");
+              return `<ul style="padding-left:20px;margin:10px 0;">${items}</ul>`;
+            }
+            // Numbered lists
+            if (lines.every((l) => /^\d+[.)]\s/.test(l.trim()))) {
+              const items = lines.map((l) => `<li style="margin:4px 0;">${inlineFormat(escHtml(l.trim().replace(/^\d+[.)]\s/, "")))}</li>`).join("");
+              return `<ol style="padding-left:20px;margin:10px 0;">${items}</ol>`;
+            }
+            // Paragraph
+            return `<p style="margin:10px 0;line-height:1.7;">${inlineFormat(escHtml(trimmed.replace(/\n/g, "<br>")))}</p>`;
+          })
+          .join("");
+      };
+      const inlineFormat = (s: string): string => {
+        return s
+          .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+          .replace(/\*(.+?)\*/g, "<em>$1</em>")
+          .replace(/`(.+?)`/g, '<code style="background:#E5E7EB;padding:2px 4px;border-radius:3px;font-size:13px;">$1</code>');
+      };
+      const contentHtml = mdToHtml(outputContent);
 
       sendEmailNotification({
         to: userEmail,
