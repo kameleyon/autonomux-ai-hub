@@ -45,8 +45,8 @@ const Navbar = () => {
     <nav
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "bg-sidebar/95 backdrop-blur-md shadow-lg"
-          : "bg-sidebar"
+          ? "bg-background/95 dark:bg-sidebar/95 backdrop-blur-md shadow-lg"
+          : "bg-background dark:bg-sidebar"
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -64,14 +64,14 @@ const Navbar = () => {
               <Link
                 key={link.label}
                 to={link.href}
-                className="text-sm text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors"
+                className="text-sm text-muted-foreground hover:text-foreground dark:text-sidebar-foreground/70 dark:hover:text-sidebar-foreground transition-colors"
               >
                 {link.label}
               </Link>
             ))}
             <button
               onClick={handleHowItWorks}
-              className="text-sm text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors"
+              className="text-sm text-muted-foreground hover:text-foreground dark:text-sidebar-foreground/70 dark:hover:text-sidebar-foreground transition-colors"
             >
               How It Works
             </button>
@@ -83,7 +83,7 @@ const Navbar = () => {
               variant="ghost"
               size="icon"
               onClick={() => setDark(!dark)}
-              className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+              className="text-muted-foreground hover:text-foreground hover:bg-secondary dark:text-sidebar-foreground/70 dark:hover:text-sidebar-foreground dark:hover:bg-sidebar-accent"
             >
               {dark ? <Sun size={18} /> : <Moon size={18} />}
             </Button>
@@ -97,7 +97,7 @@ const Navbar = () => {
                   variant="ghost"
                   size="icon"
                   onClick={async () => { await signOut(); navigate("/"); }}
-                  className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                  className="text-muted-foreground hover:text-foreground hover:bg-secondary dark:text-sidebar-foreground/70 dark:hover:text-sidebar-foreground dark:hover:bg-sidebar-accent"
                 >
                   <LogOut size={18} />
                 </Button>
@@ -106,7 +106,7 @@ const Navbar = () => {
               <>
                 <Button
                   variant="ghost"
-                  className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                  className="text-muted-foreground hover:text-foreground hover:bg-secondary dark:text-sidebar-foreground/70 dark:hover:text-sidebar-foreground dark:hover:bg-sidebar-accent"
                   asChild
                 >
                   <Link to="/signin">Sign In</Link>
@@ -124,7 +124,7 @@ const Navbar = () => {
               variant="ghost"
               size="icon"
               onClick={() => setDark(!dark)}
-              className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+              className="text-muted-foreground hover:text-foreground hover:bg-secondary dark:text-sidebar-foreground/70 dark:hover:text-sidebar-foreground dark:hover:bg-sidebar-accent"
             >
               {dark ? <Sun size={18} /> : <Moon size={18} />}
             </Button>
@@ -132,7 +132,7 @@ const Navbar = () => {
               variant="ghost"
               size="icon"
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="text-sidebar-foreground hover:bg-sidebar-accent"
+              className="text-foreground hover:bg-secondary dark:text-sidebar-foreground dark:hover:bg-sidebar-accent"
             >
               {mobileOpen ? <X size={22} /> : <Menu size={22} />}
             </Button>
@@ -142,37 +142,37 @@ const Navbar = () => {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden bg-sidebar border-t border-sidebar-border animate-fade-in">
+        <div className="md:hidden bg-background dark:bg-sidebar border-t border-border dark:border-sidebar-border animate-fade-in">
           <div className="px-4 py-4 space-y-3">
             {navLinks.map((link) => (
               <Link
                 key={link.label}
                 to={link.href}
                 onClick={() => setMobileOpen(false)}
-                className="block text-sm text-sidebar-foreground/70 hover:text-sidebar-foreground py-2"
+                className="block text-sm text-muted-foreground hover:text-foreground dark:text-sidebar-foreground/70 dark:hover:text-sidebar-foreground py-2"
               >
                 {link.label}
               </Link>
             ))}
             <button
               onClick={() => { setMobileOpen(false); handleHowItWorks(); }}
-              className="block text-sm text-sidebar-foreground/70 hover:text-sidebar-foreground py-2 w-full text-left"
+              className="block text-sm text-muted-foreground hover:text-foreground dark:text-sidebar-foreground/70 dark:hover:text-sidebar-foreground py-2 w-full text-left"
             >
               How It Works
             </button>
-            <div className="pt-3 border-t border-sidebar-border flex flex-col gap-2">
+            <div className="pt-3 border-t border-border dark:border-sidebar-border flex flex-col gap-2">
               {user ? (
                 <>
                   <div className="flex items-center gap-2 py-2">
                     <NotificationBell />
-                    <span className="text-sm text-sidebar-foreground/70">Notifications</span>
+                    <span className="text-sm text-muted-foreground dark:text-sidebar-foreground/70">Notifications</span>
                   </div>
                   <Button variant="gradient" asChild>
                     <Link to="/dashboard" onClick={() => setMobileOpen(false)}>Dashboard</Link>
                   </Button>
                   <Button
                     variant="ghost"
-                    className="justify-start text-sidebar-foreground/70"
+                    className="justify-start text-muted-foreground dark:text-sidebar-foreground/70"
                     onClick={async () => { setMobileOpen(false); await signOut(); navigate("/"); }}
                   >
                     <LogOut size={16} className="mr-2" /> Sign Out
@@ -182,7 +182,7 @@ const Navbar = () => {
                 <>
                   <Button
                     variant="ghost"
-                    className="justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                    className="justify-start text-muted-foreground hover:text-foreground hover:bg-secondary dark:text-sidebar-foreground/70 dark:hover:text-sidebar-foreground dark:hover:bg-sidebar-accent"
                     asChild
                   >
                     <Link to="/signin" onClick={() => setMobileOpen(false)}>Sign In</Link>

@@ -41,7 +41,7 @@ const Index = () => {
   return (
     <div className="bg-background">
       {/* Hero */}
-      <section className="relative bg-background dark:bg-sidebar text-foreground dark:text-sidebar-foreground overflow-hidden">
+      <section className="relative bg-secondary/30 dark:bg-sidebar text-foreground dark:text-sidebar-foreground overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32 flex flex-col lg:flex-row items-center gap-12" style={{ minHeight: "85vh" }}>
           <div className="flex-1 text-center lg:text-left space-y-6">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-medium font-display tracking-tight leading-tight">
@@ -79,7 +79,7 @@ const Index = () => {
 
           {/* Glowing agent card mockup */}
           <div className="flex-1 flex justify-center">
-            <Card className="w-96 bg-card dark:bg-sidebar-accent backdrop-blur border-border dark:border-sidebar-border" style={{ boxShadow: "0 0 60px 20px hsla(358, 81%, 51%, 0.15), 0 0 100px 40px hsla(32, 93%, 54%, 0.1)" }}>
+            <Card className="w-96 bg-card dark:bg-sidebar-accent backdrop-blur border-border dark:border-sidebar-border shadow-md">
               <CardContent className="p-6 space-y-4">
                 <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white">
                   <Rocket size={28} />
