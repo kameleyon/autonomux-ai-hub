@@ -299,6 +299,30 @@ Deno.serve(async (req) => {
       p_amount: creditCost,
     });
 
+    // Fetch user email & notification prefs early (used for success + failure emails)
+    const { data: notifProfile } = await adminClient
+      .from("profiles")
+      .select("notify_on_run_complete, notify_on_run_failed, notify_on_schedule_fail, notification_email")
+      .eq("user_id", userId)
+      .single();
+
+    const { data: { user: adminAuthUser } } = await adminClient.auth.admin.getUserById(userId);
+    const userEmail = notifProfile?.notification_email || adminAuthUser?.email;
+    const appUrl = Deno.env.get("APP_URL") || "https://autonomux.lovable.app";
+    const dashboardUrl = `${appUrl}/dashboard/runs`;
+
+    // Helper to fire-and-forget emails
+    const sendEmailNotification = (payload: { to: string; subject: string; text: string; html: string }) => {
+      fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify(payload),
+      }).catch(() => {});
+    };
+
     if (deductErr || newBalance === -1 || newBalance === null) {
       const errMsg = scheduled
         ? "Insufficient credits — schedule paused"
@@ -325,6 +349,24 @@ Deno.serve(async (req) => {
           type: "error",
           title: "Scheduled run failed — insufficient credits",
           message: `Your scheduled agent "${agent.name}" was paused because you don't have enough credits. You need ${creditCost} credits but have 0. Buy credits to resume.`,
+        });
+
+        if (userEmail && notifProfile?.notify_on_schedule_fail) {
+          sendEmailNotification({
+            to: userEmail,
+            subject: `⚠️ ${agent.name} schedule paused — insufficient credits`,
+            text: `Your scheduled agent "${agent.name}" was paused because you ran out of credits.\n\nBuy more credits: ${appUrl}/dashboard/billing`,
+            html: `<div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;"><div style="background:#EF4444;padding:24px;border-radius:12px 12px 0 0;"><h1 style="color:white;margin:0;font-size:20px;">⚠️ Schedule Paused</h1></div><div style="padding:24px;border:1px solid #E5E7EB;border-top:none;border-radius:0 0 12px 12px;"><p style="color:#374151;"><strong>${agent.name}</strong> was paused because you don't have enough credits.</p><a href="${appUrl}/dashboard/billing" style="display:inline-block;background:linear-gradient(135deg,#E81E25,#F7941D);color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">Buy Credits →</a></div></div>`,
+          });
+        }
+      }
+
+      if (userEmail && notifProfile?.notify_on_run_failed) {
+        sendEmailNotification({
+          to: userEmail,
+          subject: `❌ ${agent.name} run failed`,
+          text: `Your ${agent.name} agent run failed.\n\nReason: ${errMsg}\n\nView your dashboard: ${dashboardUrl}`,
+          html: `<div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;"><div style="background:#EF4444;padding:24px;border-radius:12px 12px 0 0;"><h1 style="color:white;margin:0;font-size:20px;">❌ Agent Run Failed</h1></div><div style="padding:24px;border:1px solid #E5E7EB;border-top:none;border-radius:0 0 12px 12px;"><p style="color:#374151;"><strong>${agent.name}</strong> encountered an issue.</p><p style="color:#EF4444;background:#FEF2F2;padding:12px;border-radius:8px;">${errMsg}</p><a href="${dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#E81E25,#F7941D);color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">View Dashboard →</a></div></div>`,
         });
       }
 
@@ -390,9 +432,19 @@ Deno.serve(async (req) => {
       await adminClient.from("transactions").insert({
         user_id: userId, type: "refund", credits: creditCost, amount_cents: 0,
       });
+      const failMsg = llmError || "All models failed";
       await adminClient.from("runs").update({
-        status: "failed", error_message: llmError || "All models failed", completed_at: new Date().toISOString(),
+        status: "failed", error_message: failMsg, completed_at: new Date().toISOString(),
       }).eq("id", run.id);
+
+      if (userEmail && notifProfile?.notify_on_run_failed) {
+        sendEmailNotification({
+          to: userEmail,
+          subject: `❌ ${agent.name} run failed`,
+          text: `Your ${agent.name} agent run failed.\n\nReason: ${failMsg}\n\nView your dashboard: ${dashboardUrl}`,
+          html: `<div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;"><div style="background:#EF4444;padding:24px;border-radius:12px 12px 0 0;"><h1 style="color:white;margin:0;font-size:20px;">❌ Agent Run Failed</h1></div><div style="padding:24px;border:1px solid #E5E7EB;border-top:none;border-radius:0 0 12px 12px;"><p style="color:#374151;"><strong>${agent.name}</strong> encountered an issue.</p><p style="color:#EF4444;background:#FEF2F2;padding:12px;border-radius:8px;">${failMsg}</p><a href="${dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#E81E25,#F7941D);color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">View Dashboard →</a></div></div>`,
+        });
+      }
 
       return new Response(JSON.stringify({ error: llmError }), {
         status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -424,6 +476,17 @@ Deno.serve(async (req) => {
       .from("deployments")
       .update({ last_run_at: new Date().toISOString() })
       .eq("id", deployment_id);
+
+    // Send success email notification
+    if (userEmail && notifProfile?.notify_on_run_complete) {
+      const truncatedOutput = outputContent.substring(0, 500);
+      sendEmailNotification({
+        to: userEmail,
+        subject: `✅ ${agent.name} completed successfully`,
+        text: `Your ${agent.name} agent just finished running.\n\nResult preview:\n${truncatedOutput}${outputContent.length > 500 ? "..." : ""}\n\nView full results: ${dashboardUrl}`,
+        html: `<div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;"><div style="background:linear-gradient(135deg,#E81E25,#F7941D);padding:24px;border-radius:12px 12px 0 0;"><h1 style="color:white;margin:0;font-size:20px;">✅ Agent Run Complete</h1></div><div style="padding:24px;border:1px solid #E5E7EB;border-top:none;border-radius:0 0 12px 12px;"><p style="color:#374151;font-size:16px;"><strong>${agent.name}</strong> just finished running.</p><div style="background:#F9FAFB;border-left:4px solid #F7941D;padding:16px;border-radius:4px;margin:16px 0;"><p style="color:#6B7280;font-size:14px;margin:0;white-space:pre-wrap;">${truncatedOutput}${outputContent.length > 500 ? "..." : ""}</p></div><a href="${dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#E81E25,#F7941D);color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:8px;">View Full Results →</a><p style="color:#9CA3AF;font-size:12px;margin-top:24px;">This run used ${creditCost} credits. <a href="${appUrl}/dashboard/billing" style="color:#F7941D;">View billing</a></p></div></div>`,
+      });
+    }
 
     const { data: updatedRun } = await adminClient.from("runs").select("*").eq("id", run.id).single();
 
