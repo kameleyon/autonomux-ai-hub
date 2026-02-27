@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
         .single();
 
       if (existingJob?.cron_job_id) {
-        await adminClient.rpc("unschedule_cron_job", { p_job_name: jobName }).catch(() => {});
+        try { await adminClient.rpc("unschedule_cron_job", { p_job_name: jobName }); } catch {}
         await adminClient.from("scheduled_jobs").delete().eq("deployment_id", deployment_id);
       }
 
@@ -182,7 +182,7 @@ Deno.serve(async (req) => {
       const sanitizedId = deployment_id.replace(/[^a-f0-9-]/gi, "");
       const jobName = `autonomux_deployment_${sanitizedId}`;
 
-      await adminClient.rpc("unschedule_cron_job", { p_job_name: jobName }).catch(() => {});
+      try { await adminClient.rpc("unschedule_cron_job", { p_job_name: jobName }); } catch {}
 
       await adminClient
         .from("deployments")
