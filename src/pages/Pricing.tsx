@@ -112,7 +112,7 @@ const Pricing = () => {
           ))}
         </div>
         <p className="text-center mt-8 text-sm text-muted-foreground">
-          Need more credits? <Link to="/dashboard/billing" className="text-primary hover:underline">Buy credit packs →</Link>
+          Need more credits? <Link to="/dashboard/billing" className="text-accent hover:underline">Buy credit packs →</Link>
         </p>
       </section>
 
