@@ -75,6 +75,7 @@ const Pricing = () => {
                     <span className="text-muted-foreground text-sm">/mo</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">{plan.credits} credits/month</p>
+                  <p className="text-xs text-accent/70">{plan.credits <= 25 ? "≈ 12 blog posts" : plan.credits <= 200 ? "≈ 100 blog posts" : "≈ 500 blog posts"}</p>
                 </div>
                 <ul className="space-y-3">
                   {plan.features.map((f) => (
