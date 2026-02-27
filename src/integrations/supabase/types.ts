@@ -369,6 +369,19 @@ export type Database = {
         Args: { p_amount: number; p_user_id: string }
         Returns: number
       }
+      get_user_analytics: {
+        Args: { p_days?: number; p_user_id: string }
+        Returns: {
+          agent_category: string
+          agent_name: string
+          created_at: string
+          credits_used: number
+          duration_seconds: number
+          run_date: string
+          run_id: string
+          status: Database["public"]["Enums"]["run_status"]
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
