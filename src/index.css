@@ -64,7 +64,7 @@
     --background: 0 3% 7%;
     --foreground: 0 0% 96%;
 
-    --card: 0 3% 11%;
+    --card: 0 3% 13%;
     --card-foreground: 0 0% 96%;
 
     --popover: 0 3% 9%;
@@ -99,7 +99,7 @@
     --sidebar-foreground: 0 0% 96%;
     --sidebar-primary: 358 81% 51%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 3% 11%;
+    --sidebar-accent: 0 3% 14%;
     --sidebar-accent-foreground: 0 0% 96%;
     --sidebar-border: 0 3% 18%;
     --sidebar-ring: 32 93% 54%;
