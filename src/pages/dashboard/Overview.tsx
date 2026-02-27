@@ -145,7 +145,7 @@ const Overview = () => {
   const statusColors: Record<string, string> = {
     success: "bg-success text-success-foreground",
     failed: "bg-destructive text-destructive-foreground",
-    running: "bg-primary text-primary-foreground",
+    running: "bg-accent text-accent-foreground",
     queued: "bg-muted text-muted-foreground",
   };
 

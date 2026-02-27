@@ -19,7 +19,7 @@ const ALLOWED_MARKDOWN_ELEMENTS = ["p", "h1", "h2", "h3", "h4", "strong", "em", 
 const statusStyles: Record<string, string> = {
   success: "bg-success text-success-foreground",
   failed: "bg-destructive text-destructive-foreground",
-  running: "bg-primary text-primary-foreground",
+  running: "bg-accent text-accent-foreground",
   queued: "bg-muted text-muted-foreground",
 };
 
