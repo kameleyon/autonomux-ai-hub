@@ -310,6 +310,7 @@ Deno.serve(async (req) => {
     const userEmail = notifProfile?.notification_email || adminAuthUser?.email;
     const appUrl = Deno.env.get("APP_URL") || "https://autonomux.lovable.app";
     const dashboardUrl = `${appUrl}/dashboard/runs`;
+    const logoUrl = "https://autonomux.lovable.app/favicon.png";
 
     // Helper to fire-and-forget emails
     const sendEmailNotification = (payload: { to: string; subject: string; text: string; html: string }) => {
@@ -358,14 +359,14 @@ Deno.serve(async (req) => {
             text: `Your scheduled agent "${agent.name}" was paused because you ran out of credits.\n\nBuy more credits: ${appUrl}/dashboard/billing`,
             html: `<div style="font-family:Montserrat,Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #E5E7EB;">
               <div style="background:#121111;padding:32px 28px;">
-                <img src="${appUrl}/favicon.png" alt="Autonomux" width="32" height="32" style="display:block;margin-bottom:16px;" />
+                <img src="${logoUrl}" alt="Autonomux" width="32" height="32" style="display:block;margin-bottom:16px;" />
                 <h1 style="color:#ffffff;margin:0;font-size:20px;font-weight:500;">Schedule Paused</h1>
                 <p style="color:rgba(255,255,255,0.6);margin:6px 0 0;font-size:14px;font-weight:400;">${agent.name} &middot; Insufficient credits</p>
               </div>
               <div style="padding:28px;">
                 <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 16px;"><strong>${agent.name}</strong> was paused because you don&rsquo;t have enough credits to continue running on schedule.</p>
                 <p style="color:#6B7280;font-size:14px;line-height:1.6;margin:0 0 24px;">Purchase additional credits to resume your scheduled runs.</p>
-                <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-radius:8px;background:linear-gradient(135deg,#E81E25,#F7941D);"><a href="${appUrl}/dashboard/billing" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:500;text-decoration:none;font-family:Montserrat,Arial,sans-serif;">Buy Credits</a></td></tr></table>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px;"><tr><td align="center" style="border-radius:8px;background:#F7941D;"><a href="${appUrl}/dashboard/billing" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:500;text-decoration:none;font-family:Montserrat,Arial,sans-serif;mso-padding-alt:0;text-underline-color:#F7941D;">Buy Credits</a></td></tr></table>
               </div>
               <div style="padding:16px 28px;border-top:1px solid #F3F4F6;">
                 <p style="color:#9CA3AF;font-size:12px;margin:0;">Autonomux &middot; Automated AI Agents</p>
@@ -382,14 +383,14 @@ Deno.serve(async (req) => {
           text: `Your ${agent.name} agent run failed.\n\nReason: ${errMsg}\n\nView your dashboard: ${dashboardUrl}`,
           html: `<div style="font-family:Montserrat,Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #E5E7EB;">
             <div style="background:#121111;padding:32px 28px;">
-              <img src="${appUrl}/favicon.png" alt="Autonomux" width="32" height="32" style="display:block;margin-bottom:16px;" />
+              <img src="${logoUrl}" alt="Autonomux" width="32" height="32" style="display:block;margin-bottom:16px;" />
               <h1 style="color:#ffffff;margin:0;font-size:20px;font-weight:500;">Run Failed</h1>
               <p style="color:rgba(255,255,255,0.6);margin:6px 0 0;font-size:14px;font-weight:400;">${agent.name}</p>
             </div>
             <div style="padding:28px;">
               <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 12px;"><strong>${agent.name}</strong> encountered an issue:</p>
               <p style="color:#991B1B;background:#FEF2F2;padding:14px 16px;border-radius:8px;font-size:14px;line-height:1.5;margin:0 0 24px;border-left:4px solid #EF4444;">${errMsg}</p>
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-radius:8px;background:linear-gradient(135deg,#E81E25,#F7941D);"><a href="${dashboardUrl}" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:500;text-decoration:none;font-family:Montserrat,Arial,sans-serif;">View Dashboard</a></td></tr></table>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px;"><tr><td align="center" style="border-radius:8px;background:#F7941D;"><a href="${dashboardUrl}" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:500;text-decoration:none;font-family:Montserrat,Arial,sans-serif;mso-padding-alt:0;text-underline-color:#F7941D;">View Dashboard</a></td></tr></table>
             </div>
             <div style="padding:16px 28px;border-top:1px solid #F3F4F6;">
               <p style="color:#9CA3AF;font-size:12px;margin:0;">Autonomux &middot; Automated AI Agents</p>
@@ -472,14 +473,14 @@ Deno.serve(async (req) => {
           text: `Your ${agent.name} agent run failed.\n\nReason: ${failMsg}\n\nView your dashboard: ${dashboardUrl}`,
           html: `<div style="font-family:Montserrat,Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #E5E7EB;">
             <div style="background:#121111;padding:32px 28px;">
-              <img src="${appUrl}/favicon.png" alt="Autonomux" width="32" height="32" style="display:block;margin-bottom:16px;" />
+              <img src="${logoUrl}" alt="Autonomux" width="32" height="32" style="display:block;margin-bottom:16px;" />
               <h1 style="color:#ffffff;margin:0;font-size:20px;font-weight:500;">Run Failed</h1>
               <p style="color:rgba(255,255,255,0.6);margin:6px 0 0;font-size:14px;font-weight:400;">${agent.name}</p>
             </div>
             <div style="padding:28px;">
               <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 12px;"><strong>${agent.name}</strong> encountered an issue:</p>
               <p style="color:#991B1B;background:#FEF2F2;padding:14px 16px;border-radius:8px;font-size:14px;line-height:1.5;margin:0 0 24px;border-left:4px solid #EF4444;">${failMsg}</p>
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-radius:8px;background:linear-gradient(135deg,#E81E25,#F7941D);"><a href="${dashboardUrl}" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:500;text-decoration:none;font-family:Montserrat,Arial,sans-serif;">View Dashboard</a></td></tr></table>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px;"><tr><td align="center" style="border-radius:8px;background:#F7941D;"><a href="${dashboardUrl}" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:500;text-decoration:none;font-family:Montserrat,Arial,sans-serif;mso-padding-alt:0;text-underline-color:#F7941D;">View Dashboard</a></td></tr></table>
             </div>
             <div style="padding:16px 28px;border-top:1px solid #F3F4F6;">
               <p style="color:#9CA3AF;font-size:12px;margin:0;">Autonomux &middot; Automated AI Agents</p>
@@ -598,7 +599,7 @@ Deno.serve(async (req) => {
         text: `Your ${agent.name} agent just finished running.\n\nHere's what it produced:\n\n${outputContent}\n\n---\nView in dashboard: ${dashboardUrl}`,
         html: `<div style="font-family:Montserrat,Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #E5E7EB;">
           <div style="background:#121111;padding:32px 28px;">
-            <img src="${appUrl}/favicon.png" alt="Autonomux" width="32" height="32" style="display:block;margin-bottom:16px;" />
+            <img src="${logoUrl}" alt="Autonomux" width="32" height="32" style="display:block;margin-bottom:16px;" />
             <h1 style="color:#ffffff;margin:0;font-size:20px;font-weight:500;">${agent.name} completed</h1>
             <p style="color:rgba(255,255,255,0.6);margin:6px 0 0;font-size:14px;font-weight:400;">Your content is ready to review</p>
           </div>
@@ -607,7 +608,7 @@ Deno.serve(async (req) => {
             <div style="background:#F9FAFB;border-left:4px solid #F7941D;padding:20px 24px;border-radius:0 6px 6px 0;margin:0 0 24px;">
               <div style="color:#374151;font-size:14px;line-height:1.7;">${contentHtml}</div>
             </div>
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-radius:8px;background:linear-gradient(135deg,#E81E25,#F7941D);"><a href="${dashboardUrl}" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:500;text-decoration:none;font-family:Montserrat,Arial,sans-serif;">View in Dashboard</a></td></tr></table>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px;"><tr><td align="center" style="border-radius:8px;background:#F7941D;"><a href="${dashboardUrl}" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:500;text-decoration:none;font-family:Montserrat,Arial,sans-serif;mso-padding-alt:0;text-underline-color:#F7941D;">View in Dashboard</a></td></tr></table>
             <p style="color:#9CA3AF;font-size:12px;margin-top:24px;">This run used ${creditCost} credit${creditCost > 1 ? "s" : ""}. <a href="${appUrl}/dashboard/billing" style="color:#F7941D;text-decoration:none;">View billing</a></p>
           </div>
           <div style="padding:16px 28px;border-top:1px solid #F3F4F6;">
