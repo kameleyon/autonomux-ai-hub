@@ -13,9 +13,9 @@ import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 const creditPacks = [
-  { credits: 100, price: 10, label: "Starter", key: "starter" },
-  { credits: 500, price: 45, label: "Growth", key: "growth", popular: true },
-  { credits: 2000, price: 160, label: "Scale", key: "scale" },
+  { credits: 100, price: 10, label: "Starter", key: "starter", desc: "≈ 50 blog posts or 33 email replies" },
+  { credits: 500, price: 45, label: "Growth", key: "growth", popular: true, desc: "≈ 250 blog posts or 125 lead searches" },
+  { credits: 2000, price: 160, label: "Scale", key: "scale", desc: "≈ 1,000 blog posts or 400 code reviews" },
 ];
 
 const Billing = () => {
@@ -111,6 +111,7 @@ const Billing = () => {
                         <div>
                           <p className="font-medium text-sm">{pack.label}</p>
                           <p className="text-xs text-muted-foreground">{pack.credits} credits</p>
+                          <p className="text-xs text-accent/70">{pack.desc}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-base font-medium">${pack.price}</p>

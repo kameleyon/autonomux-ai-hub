@@ -264,6 +264,7 @@ const MyAgents = () => {
           currentInterval={scheduleDeployment.schedule_interval}
           scheduleEnabled={scheduleDeployment.schedule_enabled ?? false}
           nextRunAt={scheduleDeployment.next_run_at}
+          creditCost={scheduleDeployment.agents?.base_credit_cost ?? 1}
         />
       )}
     </div>

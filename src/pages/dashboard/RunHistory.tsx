@@ -8,9 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Clock, Coins } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Clock, Coins, Copy } from "lucide-react";
 import { differenceInSeconds, differenceInMinutes } from "date-fns";
 import ReactMarkdown from "react-markdown";
+import { toast } from "sonner";
 import type { DeploymentWithAgent } from "@/types/deployment";
 
 const ALLOWED_MARKDOWN_ELEMENTS = ["p", "h1", "h2", "h3", "h4", "strong", "em", "ul", "ol", "li", "code", "pre", "blockquote"];
@@ -31,6 +32,15 @@ const RunHistory = () => {
   const [agentFilter, setAgentFilter] = useState("all");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [page, setPage] = useState(0);
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Output copied to clipboard!");
+    } catch {
+      toast.error("Failed to copy");
+    }
+  };
 
   const { data: deployments } = useQuery({
     queryKey: ["my-deployments", user?.id],
@@ -166,6 +176,14 @@ const RunHistory = () => {
                                   <div className="mt-1 bg-background p-3 rounded-lg border max-h-[500px] overflow-y-auto prose prose-sm max-w-none dark:prose-invert">
                                     <ReactMarkdown allowedElements={ALLOWED_MARKDOWN_ELEMENTS}>{run.output_summary}</ReactMarkdown>
                                   </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="mt-2"
+                                    onClick={(e) => { e.stopPropagation(); copyToClipboard(run.output_summary ?? ""); }}
+                                  >
+                                    <Copy size={14} className="mr-1.5" /> Copy Output
+                                  </Button>
                                 </div>
                               )}
                               {run.error_message && <p className="text-destructive"><span className="font-medium">Error:</span> {run.error_message}</p>}
