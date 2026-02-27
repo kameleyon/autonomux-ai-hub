@@ -48,7 +48,7 @@ const Index = () => {
               Your <span className="text-gradient">AI Workforce</span>,<br />One Click Away
             </h1>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0">
-              Deploy intelligent AI agents that automate your workflows — from lead generation to customer support, content creation to data analysis.
+              Pick an AI agent, tell it what you need, and get results in seconds — blog posts, email replies, lead lists, meeting summaries, and more. No coding, no complexity.
             </p>
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4">
               <Button variant="gradient" size="lg" className="animate-shimmer" asChild>
@@ -56,18 +56,21 @@ const Index = () => {
               </Button>
               <Button
                 size="lg"
-                className="bg-secondary border border-border text-foreground hover:bg-secondary/80 dark:bg-sidebar-accent dark:border-sidebar-foreground/40 dark:text-sidebar-foreground dark:hover:bg-sidebar-foreground/10"
+                className="bg-transparent border-2 border-foreground/60 text-foreground hover:bg-foreground/10 hover:border-foreground/80 dark:border-sidebar-foreground/60 dark:text-sidebar-foreground dark:hover:bg-sidebar-foreground/10 dark:hover:border-sidebar-foreground/80"
                 onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })}
               >
                 How It Works
               </Button>
             </div>
+            <p className="text-sm text-muted-foreground pt-2">
+              ✨ Start free — 25 credits included, no credit card required
+            </p>
             {/* Trust stats */}
             <div className="flex items-center justify-center lg:justify-start gap-8 pt-8">
               {[
-                { label: "Agents", value: "500+" },
-                { label: "Tasks Completed", value: "10,000+" },
-                { label: "Uptime", value: "99.9%" },
+                { label: "AI Agents Ready", value: "10+" },
+                { label: "Free Credits to Start", value: "25" },
+                { label: "Avg Results Time", value: "<30s" },
               ].map((s) => (
                 <div key={s.label} className="text-center animate-fade-in">
                   <p className="text-2xl font-medium text-gradient">{s.value}</p>
@@ -97,6 +100,35 @@ const Index = () => {
         </div>
       </section>
 
+      {/* What is an AI Agent — Explainer */}
+      <section className="py-16 bg-background border-b border-border">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+          <Badge variant="accent" className="mb-2">New to AI Agents?</Badge>
+          <h2 className="text-2xl lg:text-3xl font-medium font-display">Think of AI Agents as Digital Employees</h2>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
+            An AI agent is a smart assistant that does a specific job for you — automatically. Tell it what you need, 
+            give it your preferences, and it works around the clock. No coding, no technical skills, just results.
+          </p>
+          <div className="grid sm:grid-cols-3 gap-6 pt-4">
+            <div className="p-4 rounded-xl bg-card border space-y-2">
+              <p className="text-2xl">📧</p>
+              <h3 className="font-medium text-sm">Email Agent</h3>
+              <p className="text-xs text-muted-foreground">Paste an email you received → get a professional reply in your tone, instantly</p>
+            </div>
+            <div className="p-4 rounded-xl bg-card border space-y-2">
+              <p className="text-2xl">✍️</p>
+              <h3 className="font-medium text-sm">Blog Writer</h3>
+              <p className="text-xs text-muted-foreground">Tell it a topic → get a full SEO blog post with headings and structure in 30 seconds</p>
+            </div>
+            <div className="p-4 rounded-xl bg-card border space-y-2">
+              <p className="text-2xl">🔍</p>
+              <h3 className="font-medium text-sm">Lead Finder</h3>
+              <p className="text-xs text-muted-foreground">Set your target market → get a list of qualified leads with outreach angles</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* How It Works */}
       <section id="how-it-works" className="py-20 lg:py-28 bg-background">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-12">
@@ -106,9 +138,9 @@ const Index = () => {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { step: "1", title: "Browse", desc: "Explore our marketplace of 500+ AI agents across every category.", icon: Search },
-              { step: "2", title: "Configure", desc: "Customize the agent with your preferences, credentials, and schedule.", icon: Settings },
-              { step: "3", title: "Deploy", desc: "Launch your agent with one click. It runs autonomously 24/7.", icon: Rocket },
+              { step: "1", title: "Pick Your Agent", desc: "Browse ready-made AI agents for email, content, leads, support, and more. Each one does a specific job.", icon: Search },
+              { step: "2", title: "Set Your Preferences", desc: "Choose your tone, style, and options with simple dropdowns. No technical setup needed.", icon: Settings },
+              { step: "3", title: "Get Results", desc: "Click go and get results in seconds. Schedule it to run automatically if you want.", icon: Rocket },
             ].map(({ step, title, desc, icon: Icon }) => (
               <div key={step} className="space-y-4">
                 <div className="w-14 h-14 mx-auto rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-xl font-medium">
@@ -155,7 +187,7 @@ const Index = () => {
                       <p className="text-sm text-muted-foreground line-clamp-2">{agent.description}</p>
                       <div className="flex gap-2">
                         <Badge variant="accent">{agent.category}</Badge>
-                        <Badge variant="secondary">{agent.base_credit_cost} credits</Badge>
+                        <Badge variant="secondary">{agent.base_credit_cost} credits (~${(agent.base_credit_cost * 0.10).toFixed(2)})</Badge>
                       </div>
                     </CardContent>
                   </Card>
@@ -166,8 +198,37 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Value Props */}
+      <section className="py-16 bg-background">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center space-y-3 p-6">
+              <div className="w-12 h-12 mx-auto rounded-full bg-accent/10 flex items-center justify-center">
+                <span className="text-xl">⚡</span>
+              </div>
+              <h3 className="font-medium">Results in Seconds</h3>
+              <p className="text-sm text-muted-foreground">Every agent returns results in under 30 seconds. No waiting, no queues — just instant output.</p>
+            </div>
+            <div className="text-center space-y-3 p-6">
+              <div className="w-12 h-12 mx-auto rounded-full bg-accent/10 flex items-center justify-center">
+                <span className="text-xl">🔒</span>
+              </div>
+              <h3 className="font-medium">Your Data Stays Private</h3>
+              <p className="text-sm text-muted-foreground">Credentials are AES-256 encrypted. We never store anything in plain text. Your keys, your control.</p>
+            </div>
+            <div className="text-center space-y-3 p-6">
+              <div className="w-12 h-12 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-xl">🚀</span>
+              </div>
+              <h3 className="font-medium">No Code Required</h3>
+              <p className="text-sm text-muted-foreground">Pick an agent, set your preferences with simple dropdowns, click go. That's it — no programming, no setup guides.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Categories */}
-      <section className="py-20 bg-background dark:bg-background">
+      <section className="py-20 bg-secondary/30 dark:bg-sidebar-accent">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           <div className="text-center">
             <Badge variant="accent" className="mb-4">Categories</Badge>
@@ -192,13 +253,13 @@ const Index = () => {
       </section>
 
       {/* CTA Banner */}
-      <section className="bg-secondary/50 dark:bg-sidebar-accent text-foreground dark:text-sidebar-foreground py-16">
+      <section className="bg-secondary/50 dark:bg-sidebar text-foreground dark:text-sidebar-foreground py-16">
         <div className="max-w-3xl mx-auto px-4 text-center space-y-6">
           <h2 className="text-3xl lg:text-4xl font-medium font-display">
             Ready to <span className="text-gradient">Automate</span>?
           </h2>
           <p className="text-muted-foreground">
-            Join thousands of teams using Autonomux to scale their operations with AI agents.
+            Start with 25 free credits — no credit card required. Set up your first AI agent in under 2 minutes.
           </p>
           <Button variant="gradient" size="lg" asChild>
             <Link to="/signup">Get Started Free</Link>
