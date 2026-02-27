@@ -111,17 +111,17 @@ const Index = () => {
           </p>
           <div className="grid sm:grid-cols-3 gap-6 pt-4">
             <div className="p-4 rounded-xl bg-card border space-y-2">
-              <Mail size={24} className="text-primary" />
+              <Mail size={24} className="text-accent" />
               <h3 className="font-medium text-sm">Email Agent</h3>
               <p className="text-xs text-muted-foreground">Paste an email you received → get a professional reply in your tone, instantly</p>
             </div>
             <div className="p-4 rounded-xl bg-card border space-y-2">
-              <PenLine size={24} className="text-primary" />
+              <PenLine size={24} className="text-accent" />
               <h3 className="font-medium text-sm">Blog Writer</h3>
               <p className="text-xs text-muted-foreground">Tell it a topic → get a full SEO blog post with headings and structure in 30 seconds</p>
             </div>
             <div className="p-4 rounded-xl bg-card border space-y-2">
-              <SearchCheck size={24} className="text-primary" />
+              <SearchCheck size={24} className="text-accent" />
               <h3 className="font-medium text-sm">Lead Finder</h3>
               <p className="text-xs text-muted-foreground">Set your target market → get a list of qualified leads with outreach angles</p>
             </div>
@@ -227,7 +227,7 @@ const Index = () => {
               <Badge variant="accent" className="mb-4">Featured</Badge>
               <h2 className="text-3xl font-medium font-display">Top-Rated Agents</h2>
             </div>
-            <Link to="/marketplace" className="text-sm text-primary hover:underline flex items-center gap-1">
+            <Link to="/marketplace" className="text-sm text-accent hover:underline flex items-center gap-1">
               View All <ArrowRight size={14} />
             </Link>
           </div>
@@ -317,8 +317,8 @@ const Index = () => {
               <p className="text-sm text-muted-foreground">Credentials are AES-256 encrypted. We never store anything in plain text. Your keys, your control.</p>
             </div>
             <div className="text-center space-y-3 p-6">
-              <div className="w-12 h-12 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-                <Rocket size={22} className="text-primary" />
+              <div className="w-12 h-12 mx-auto rounded-full bg-accent/10 flex items-center justify-center">
+                <Rocket size={22} className="text-accent" />
               </div>
               <h3 className="font-medium">No Code Required</h3>
               <p className="text-sm text-muted-foreground">Pick an agent, set your preferences with simple dropdowns, click go. That's it — no programming, no setup guides.</p>
