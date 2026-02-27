@@ -44,13 +44,13 @@
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 3% 7%;
-    --sidebar-foreground: 0 0% 96%;
+    --sidebar-background: 220 14% 96%;
+    --sidebar-foreground: 240 22% 15%;
     --sidebar-primary: 358 81% 51%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 3% 11%;
-    --sidebar-accent-foreground: 0 0% 96%;
-    --sidebar-border: 0 3% 18%;
+    --sidebar-accent: 220 13% 91%;
+    --sidebar-accent-foreground: 240 22% 15%;
+    --sidebar-border: 220 13% 87%;
     --sidebar-ring: 32 93% 54%;
 
     --gradient-from: 358 81% 51%;
