@@ -211,7 +211,7 @@ const Marketplace = () => {
                           <p className="text-sm text-muted-foreground line-clamp-2">{agent.description}</p>
                           <div className="flex gap-2">
                             <Badge variant="accent">{agent.category}</Badge>
-                            <Badge variant="secondary">{agent.base_credit_cost} credits</Badge>
+                            <Badge variant="secondary">{agent.base_credit_cost} credits (~${(agent.base_credit_cost * 0.10).toFixed(2)})</Badge>
                           </div>
                           <div className="flex items-center justify-between pt-1">
                             <span className="text-xs text-muted-foreground">{agent.total_deployments} deployments</span>
