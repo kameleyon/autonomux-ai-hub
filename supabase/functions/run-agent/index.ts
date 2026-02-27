@@ -354,9 +354,23 @@ Deno.serve(async (req) => {
         if (userEmail && notifProfile?.notify_on_schedule_fail) {
           sendEmailNotification({
             to: userEmail,
-            subject: `⚠️ ${agent.name} schedule paused — insufficient credits`,
+            subject: `${agent.name} — schedule paused (insufficient credits)`,
             text: `Your scheduled agent "${agent.name}" was paused because you ran out of credits.\n\nBuy more credits: ${appUrl}/dashboard/billing`,
-            html: `<div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;"><div style="background:#EF4444;padding:24px;border-radius:12px 12px 0 0;"><h1 style="color:white;margin:0;font-size:20px;">⚠️ Schedule Paused</h1></div><div style="padding:24px;border:1px solid #E5E7EB;border-top:none;border-radius:0 0 12px 12px;"><p style="color:#374151;"><strong>${agent.name}</strong> was paused because you don't have enough credits.</p><a href="${appUrl}/dashboard/billing" style="display:inline-block;background:linear-gradient(135deg,#E81E25,#F7941D);color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">Buy Credits →</a></div></div>`,
+            html: `<div style="font-family:Montserrat,Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #E5E7EB;">
+              <div style="background:#121111;padding:32px 28px;">
+                <img src="${appUrl}/favicon.png" alt="Autonomux" width="32" height="32" style="display:block;margin-bottom:16px;" />
+                <h1 style="color:#ffffff;margin:0;font-size:20px;font-weight:500;">Schedule Paused</h1>
+                <p style="color:rgba(255,255,255,0.6);margin:6px 0 0;font-size:14px;font-weight:400;">${agent.name} &middot; Insufficient credits</p>
+              </div>
+              <div style="padding:28px;">
+                <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 16px;"><strong>${agent.name}</strong> was paused because you don&rsquo;t have enough credits to continue running on schedule.</p>
+                <p style="color:#6B7280;font-size:14px;line-height:1.6;margin:0 0 24px;">Purchase additional credits to resume your scheduled runs.</p>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-radius:8px;background:linear-gradient(135deg,#E81E25,#F7941D);"><a href="${appUrl}/dashboard/billing" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:500;text-decoration:none;font-family:Montserrat,Arial,sans-serif;">Buy Credits</a></td></tr></table>
+              </div>
+              <div style="padding:16px 28px;border-top:1px solid #F3F4F6;">
+                <p style="color:#9CA3AF;font-size:12px;margin:0;">Autonomux &middot; Automated AI Agents</p>
+              </div>
+            </div>`,
           });
         }
       }
@@ -364,9 +378,23 @@ Deno.serve(async (req) => {
       if (userEmail && notifProfile?.notify_on_run_failed) {
         sendEmailNotification({
           to: userEmail,
-          subject: `❌ ${agent.name} run failed`,
+          subject: `${agent.name} — run failed`,
           text: `Your ${agent.name} agent run failed.\n\nReason: ${errMsg}\n\nView your dashboard: ${dashboardUrl}`,
-          html: `<div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;"><div style="background:#EF4444;padding:24px;border-radius:12px 12px 0 0;"><h1 style="color:white;margin:0;font-size:20px;">❌ Agent Run Failed</h1></div><div style="padding:24px;border:1px solid #E5E7EB;border-top:none;border-radius:0 0 12px 12px;"><p style="color:#374151;"><strong>${agent.name}</strong> encountered an issue.</p><p style="color:#EF4444;background:#FEF2F2;padding:12px;border-radius:8px;">${errMsg}</p><a href="${dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#E81E25,#F7941D);color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">View Dashboard →</a></div></div>`,
+          html: `<div style="font-family:Montserrat,Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #E5E7EB;">
+            <div style="background:#121111;padding:32px 28px;">
+              <img src="${appUrl}/favicon.png" alt="Autonomux" width="32" height="32" style="display:block;margin-bottom:16px;" />
+              <h1 style="color:#ffffff;margin:0;font-size:20px;font-weight:500;">Run Failed</h1>
+              <p style="color:rgba(255,255,255,0.6);margin:6px 0 0;font-size:14px;font-weight:400;">${agent.name}</p>
+            </div>
+            <div style="padding:28px;">
+              <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 12px;"><strong>${agent.name}</strong> encountered an issue:</p>
+              <p style="color:#991B1B;background:#FEF2F2;padding:14px 16px;border-radius:8px;font-size:14px;line-height:1.5;margin:0 0 24px;border-left:4px solid #EF4444;">${errMsg}</p>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-radius:8px;background:linear-gradient(135deg,#E81E25,#F7941D);"><a href="${dashboardUrl}" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:500;text-decoration:none;font-family:Montserrat,Arial,sans-serif;">View Dashboard</a></td></tr></table>
+            </div>
+            <div style="padding:16px 28px;border-top:1px solid #F3F4F6;">
+              <p style="color:#9CA3AF;font-size:12px;margin:0;">Autonomux &middot; Automated AI Agents</p>
+            </div>
+          </div>`,
         });
       }
 
@@ -440,9 +468,23 @@ Deno.serve(async (req) => {
       if (userEmail && notifProfile?.notify_on_run_failed) {
         sendEmailNotification({
           to: userEmail,
-          subject: `❌ ${agent.name} run failed`,
+          subject: `${agent.name} — run failed`,
           text: `Your ${agent.name} agent run failed.\n\nReason: ${failMsg}\n\nView your dashboard: ${dashboardUrl}`,
-          html: `<div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;"><div style="background:#EF4444;padding:24px;border-radius:12px 12px 0 0;"><h1 style="color:white;margin:0;font-size:20px;">❌ Agent Run Failed</h1></div><div style="padding:24px;border:1px solid #E5E7EB;border-top:none;border-radius:0 0 12px 12px;"><p style="color:#374151;"><strong>${agent.name}</strong> encountered an issue.</p><p style="color:#EF4444;background:#FEF2F2;padding:12px;border-radius:8px;">${failMsg}</p><a href="${dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#E81E25,#F7941D);color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">View Dashboard →</a></div></div>`,
+          html: `<div style="font-family:Montserrat,Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #E5E7EB;">
+            <div style="background:#121111;padding:32px 28px;">
+              <img src="${appUrl}/favicon.png" alt="Autonomux" width="32" height="32" style="display:block;margin-bottom:16px;" />
+              <h1 style="color:#ffffff;margin:0;font-size:20px;font-weight:500;">Run Failed</h1>
+              <p style="color:rgba(255,255,255,0.6);margin:6px 0 0;font-size:14px;font-weight:400;">${agent.name}</p>
+            </div>
+            <div style="padding:28px;">
+              <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 12px;"><strong>${agent.name}</strong> encountered an issue:</p>
+              <p style="color:#991B1B;background:#FEF2F2;padding:14px 16px;border-radius:8px;font-size:14px;line-height:1.5;margin:0 0 24px;border-left:4px solid #EF4444;">${failMsg}</p>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-radius:8px;background:linear-gradient(135deg,#E81E25,#F7941D);"><a href="${dashboardUrl}" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:500;text-decoration:none;font-family:Montserrat,Arial,sans-serif;">View Dashboard</a></td></tr></table>
+            </div>
+            <div style="padding:16px 28px;border-top:1px solid #F3F4F6;">
+              <p style="color:#9CA3AF;font-size:12px;margin:0;">Autonomux &middot; Automated AI Agents</p>
+            </div>
+          </div>`,
         });
       }
 
@@ -481,56 +523,95 @@ Deno.serve(async (req) => {
     if (userEmail && notifProfile?.notify_on_run_complete) {
       // Convert markdown to HTML for email rendering
       const escHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      const mdToHtml = (md: string): string => {
-        return md
-          .split(/\n\n+/)
-          .map((block) => {
-            const trimmed = block.trim();
-            if (!trimmed) return "";
-            // Headings
-            if (trimmed.startsWith("### ")) return `<h3 style="font-size:16px;font-weight:700;margin:16px 0 8px;color:#1F2937;">${escHtml(trimmed.slice(4))}</h3>`;
-            if (trimmed.startsWith("## ")) return `<h2 style="font-size:18px;font-weight:700;margin:20px 0 8px;color:#1F2937;">${escHtml(trimmed.slice(3))}</h2>`;
-            if (trimmed.startsWith("# ")) return `<h1 style="font-size:22px;font-weight:700;margin:24px 0 10px;color:#111827;">${escHtml(trimmed.slice(2))}</h1>`;
-            // Bullet lists
-            const lines = trimmed.split("\n");
-            if (lines.every((l) => /^[-*]\s/.test(l.trim()))) {
-              const items = lines.map((l) => `<li style="margin:4px 0;">${inlineFormat(escHtml(l.trim().replace(/^[-*]\s/, "")))}</li>`).join("");
-              return `<ul style="padding-left:20px;margin:10px 0;">${items}</ul>`;
-            }
-            // Numbered lists
-            if (lines.every((l) => /^\d+[.)]\s/.test(l.trim()))) {
-              const items = lines.map((l) => `<li style="margin:4px 0;">${inlineFormat(escHtml(l.trim().replace(/^\d+[.)]\s/, "")))}</li>`).join("");
-              return `<ol style="padding-left:20px;margin:10px 0;">${items}</ol>`;
-            }
-            // Paragraph
-            return `<p style="margin:10px 0;line-height:1.7;">${inlineFormat(escHtml(trimmed.replace(/\n/g, "<br>")))}</p>`;
-          })
-          .join("");
-      };
       const inlineFormat = (s: string): string => {
         return s
           .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
           .replace(/\*(.+?)\*/g, "<em>$1</em>")
-          .replace(/`(.+?)`/g, '<code style="background:#E5E7EB;padding:2px 4px;border-radius:3px;font-size:13px;">$1</code>');
+          .replace(/`(.+?)`/g, '<code style="background:#E5E7EB;padding:2px 5px;border-radius:4px;font-size:13px;font-family:monospace;">$1</code>');
+      };
+      const mdToHtml = (md: string): string => {
+        const blocks: string[] = [];
+        const lines = md.split("\n");
+        let i = 0;
+        while (i < lines.length) {
+          const line = lines[i].trimEnd();
+          if (!line.trim()) { i++; continue; }
+
+          // Headings
+          if (line.startsWith("#### ")) { blocks.push(`<h4 style="font-size:15px;font-weight:600;margin:18px 0 6px;color:#1F2937;">${inlineFormat(escHtml(line.slice(5)))}</h4>`); i++; continue; }
+          if (line.startsWith("### ")) { blocks.push(`<h3 style="font-size:16px;font-weight:600;margin:20px 0 8px;color:#1F2937;">${inlineFormat(escHtml(line.slice(4)))}</h3>`); i++; continue; }
+          if (line.startsWith("## ")) { blocks.push(`<h2 style="font-size:18px;font-weight:600;margin:22px 0 8px;color:#1F2937;">${inlineFormat(escHtml(line.slice(3)))}</h2>`); i++; continue; }
+          if (line.startsWith("# ")) { blocks.push(`<h1 style="font-size:22px;font-weight:600;margin:24px 0 10px;color:#111827;">${inlineFormat(escHtml(line.slice(2)))}</h1>`); i++; continue; }
+
+          // Horizontal rule
+          if (/^[-*_]{3,}\s*$/.test(line.trim())) { blocks.push('<hr style="border:none;border-top:1px solid #E5E7EB;margin:20px 0;" />'); i++; continue; }
+
+          // Blockquote
+          if (line.trim().startsWith("> ")) {
+            const quoteLines: string[] = [];
+            while (i < lines.length && lines[i].trim().startsWith("> ")) {
+              quoteLines.push(lines[i].trim().slice(2));
+              i++;
+            }
+            blocks.push(`<blockquote style="border-left:3px solid #F7941D;padding:8px 16px;margin:12px 0;color:#4B5563;background:#FFFBF5;">${inlineFormat(escHtml(quoteLines.join(" ")))}</blockquote>`);
+            continue;
+          }
+
+          // Bullet list
+          if (/^[-*]\s/.test(line.trim())) {
+            const items: string[] = [];
+            while (i < lines.length && /^[-*]\s/.test(lines[i].trim())) {
+              items.push(`<li style="margin:5px 0;line-height:1.6;">${inlineFormat(escHtml(lines[i].trim().replace(/^[-*]\s/, "")))}</li>`);
+              i++;
+            }
+            blocks.push(`<ul style="padding-left:20px;margin:10px 0;color:#374151;">${items.join("")}</ul>`);
+            continue;
+          }
+
+          // Numbered list
+          if (/^\d+[.)]\s/.test(line.trim())) {
+            const items: string[] = [];
+            while (i < lines.length && /^\d+[.)]\s/.test(lines[i].trim())) {
+              items.push(`<li style="margin:5px 0;line-height:1.6;">${inlineFormat(escHtml(lines[i].trim().replace(/^\d+[.)]\s/, "")))}</li>`);
+              i++;
+            }
+            blocks.push(`<ol style="padding-left:20px;margin:10px 0;color:#374151;">${items.join("")}</ol>`);
+            continue;
+          }
+
+          // Paragraph — collect consecutive non-empty, non-special lines
+          const paraLines: string[] = [line];
+          i++;
+          while (i < lines.length && lines[i].trim() && !/^(#{1,4}\s|[-*]\s|\d+[.)]\s|>|[-*_]{3,})/.test(lines[i].trim())) {
+            paraLines.push(lines[i].trimEnd());
+            i++;
+          }
+          blocks.push(`<p style="margin:10px 0;line-height:1.7;color:#374151;">${inlineFormat(escHtml(paraLines.join(" ")))}</p>`);
+        }
+        return blocks.join("");
       };
       const contentHtml = mdToHtml(outputContent);
 
       sendEmailNotification({
         to: userEmail,
-        subject: `✅ ${agent.name} completed — here's your content`,
+        subject: `${agent.name} completed — your content is ready`,
         text: `Your ${agent.name} agent just finished running.\n\nHere's what it produced:\n\n${outputContent}\n\n---\nView in dashboard: ${dashboardUrl}`,
-        html: `<div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;">
-          <div style="background:linear-gradient(135deg,#E81E25,#F7941D);padding:24px;border-radius:12px 12px 0 0;">
-            <h1 style="color:white;margin:0;font-size:20px;">✅ ${agent.name} — Done!</h1>
-            <p style="color:rgba(255,255,255,0.85);margin:4px 0 0;font-size:14px;">Your content is ready</p>
+        html: `<div style="font-family:Montserrat,Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #E5E7EB;">
+          <div style="background:#121111;padding:32px 28px;">
+            <img src="${appUrl}/favicon.png" alt="Autonomux" width="32" height="32" style="display:block;margin-bottom:16px;" />
+            <h1 style="color:#ffffff;margin:0;font-size:20px;font-weight:500;">${agent.name} completed</h1>
+            <p style="color:rgba(255,255,255,0.6);margin:6px 0 0;font-size:14px;font-weight:400;">Your content is ready to review</p>
           </div>
-          <div style="padding:24px;border:1px solid #E5E7EB;border-top:none;border-radius:0 0 12px 12px;">
-            <p style="color:#374151;font-size:16px;margin-bottom:16px;">Here's the full output from <strong>${agent.name}</strong>:</p>
-            <div style="background:#F9FAFB;border-left:4px solid #F7941D;padding:20px;border-radius:4px;margin:0 0 20px;">
+          <div style="padding:28px;">
+            <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 20px;">Here's the full output from <strong>${agent.name}</strong>:</p>
+            <div style="background:#F9FAFB;border-left:4px solid #F7941D;padding:20px 24px;border-radius:0 6px 6px 0;margin:0 0 24px;">
               <div style="color:#374151;font-size:14px;line-height:1.7;">${contentHtml}</div>
             </div>
-            <a href="${dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#E81E25,#F7941D);color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">View in Dashboard →</a>
-            <p style="color:#9CA3AF;font-size:12px;margin-top:24px;">This run used ${creditCost} credit${creditCost > 1 ? "s" : ""}. <a href="${appUrl}/dashboard/billing" style="color:#F7941D;">View billing</a></p>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-radius:8px;background:linear-gradient(135deg,#E81E25,#F7941D);"><a href="${dashboardUrl}" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:500;text-decoration:none;font-family:Montserrat,Arial,sans-serif;">View in Dashboard</a></td></tr></table>
+            <p style="color:#9CA3AF;font-size:12px;margin-top:24px;">This run used ${creditCost} credit${creditCost > 1 ? "s" : ""}. <a href="${appUrl}/dashboard/billing" style="color:#F7941D;text-decoration:none;">View billing</a></p>
+          </div>
+          <div style="padding:16px 28px;border-top:1px solid #F3F4F6;">
+            <p style="color:#9CA3AF;font-size:12px;margin:0;">Autonomux &middot; Automated AI Agents</p>
           </div>
         </div>`,
       });
