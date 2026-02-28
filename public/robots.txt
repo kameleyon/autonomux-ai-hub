@@ -1,14 +1,21 @@
-User-agent: Googlebot
+User-agent: *
 Allow: /
+Disallow: /dashboard/
+Disallow: /deploy/
+Disallow: /reset-password
+Disallow: /forgot-password
 
-User-agent: Bingbot
-Allow: /
-
+# Allow social crawlers full access to public pages
 User-agent: Twitterbot
 Allow: /
 
 User-agent: facebookexternalhit
 Allow: /
 
-User-agent: *
+User-agent: LinkedInBot
 Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+Sitemap: https://autonomux.lovable.app/sitemap.xml
