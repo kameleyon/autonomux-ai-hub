@@ -14,7 +14,7 @@ const DashboardLayout = () => {
             <img src={logo} alt="Autonomux" className="w-7 h-7 shrink-0" />
             <span className="text-gradient text-lg font-medium font-display">Autonomux</span>
           </header>
-          <main className="flex-1 p-4 md:p-8 overflow-auto">
+          <main className="flex-1 p-3 sm:p-4 md:p-8 overflow-x-hidden overflow-y-auto">
             <Outlet />
           </main>
         </SidebarInset>

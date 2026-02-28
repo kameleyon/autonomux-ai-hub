@@ -135,7 +135,7 @@ const MyAgents = () => {
   };
 
   const ActionButtons = ({ dep }: { dep: DeploymentWithAgent }) => (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-0.5 flex-wrap">
       <Button
         variant="ghost"
         size="icon"
@@ -228,15 +228,14 @@ const MyAgents = () => {
             return (
               <Card key={dep.id}>
                 <CardContent className="p-4 space-y-3">
-                  {/* Row 1: Name + Status + Actions */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-medium text-sm truncate">{dep.agents?.name ?? "—"}</span>
-                      <Badge className={`shrink-0 ${statusStyles[dep.status] ?? ""}`}>{dep.status}</Badge>
-                    </div>
-                    <ActionButtons dep={dep} />
+                  {/* Row 1: Name + Status */}
+                  <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                    <span className="font-medium text-sm truncate">{dep.agents?.name ?? "—"}</span>
+                    <Badge className={`shrink-0 ${statusStyles[dep.status] ?? ""}`}>{dep.status}</Badge>
                   </div>
-                  {/* Row 2: Details grid */}
+                  {/* Row 2: Actions */}
+                  <ActionButtons dep={dep} />
+                  {/* Row 3: Details grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                     <div>
                       <p className="text-muted-foreground">Schedule</p>
