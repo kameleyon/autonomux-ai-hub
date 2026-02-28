@@ -604,6 +604,8 @@ Deno.serve(async (req) => {
           headers: {
             Authorization: `Bearer ${openRouterKey}`,
             "Content-Type": "application/json",
+            "HTTP-Referer": "https://autonomux.lovable.app",
+            "X-Title": "Autonomux",
           },
           body: JSON.stringify({
             model,
