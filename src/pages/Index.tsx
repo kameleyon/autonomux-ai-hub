@@ -42,9 +42,9 @@ const Index = () => {
     <div className="bg-background">
       {/* Hero */}
       <section className="relative bg-secondary/30 dark:bg-sidebar text-foreground dark:text-sidebar-foreground overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32 flex flex-col lg:flex-row items-center gap-12" style={{ minHeight: "85vh" }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-32 flex flex-col lg:flex-row items-center gap-8 lg:gap-12" style={{ minHeight: "85vh" }}>
           <div className="flex-1 text-center lg:text-left space-y-6">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-medium font-display tracking-tight leading-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-medium font-display tracking-tight leading-tight">
               Your <span className="text-gradient">AI Workforce</span>,<br />One Click Away
             </h1>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0">
@@ -66,7 +66,7 @@ const Index = () => {
               ✨ Start free — 25 credits included, no credit card required
             </p>
             {/* Trust stats */}
-            <div className="flex items-center justify-center lg:justify-start gap-8 pt-8">
+            <div className="flex items-center justify-center lg:justify-start gap-6 sm:gap-8 pt-8">
               {[
                 { label: "AI Agents Ready", value: "10+" },
                 { label: "Free Credits to Start", value: "25" },
@@ -81,8 +81,8 @@ const Index = () => {
           </div>
 
           {/* Glowing agent card mockup */}
-          <div className="flex-1 flex justify-center">
-            <Card className="w-96 bg-card dark:bg-sidebar-accent backdrop-blur border-border dark:border-sidebar-border shadow-md">
+          <div className="flex-1 flex justify-center w-full">
+            <Card className="w-full max-w-sm bg-card dark:bg-sidebar-accent backdrop-blur border-border dark:border-sidebar-border shadow-md">
               <CardContent className="p-6 space-y-4">
                 <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white">
                   <Rocket size={28} />
@@ -198,7 +198,7 @@ const Index = () => {
             <Badge variant="accent" className="mb-3">See It In Action</Badge>
             <h2 className="text-2xl lg:text-3xl font-medium font-display">From Click to Results in 30 Seconds</h2>
           </div>
-          <div className="grid md:grid-cols-4 gap-4 text-left">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 text-left">
             {[
               { step: "1", title: "Pick an agent", desc: "Browse the marketplace and choose \"Blog Writer\"", emoji: "🎯" },
               { step: "2", title: "Set preferences", desc: "Topic: \"AI in Healthcare\", Tone: Informative, 1000 words", emoji: "⚙️" },
@@ -339,7 +339,7 @@ const Index = () => {
               <Link
                 key={name}
                 to={`/marketplace?category=${name}`}
-                className="group rounded-xl border-2 border-border hover:border-accent p-6 text-center space-y-3 transition-all hover:-translate-y-0.5"
+                className="group rounded-xl border-2 border-border hover:border-accent p-4 sm:p-6 text-center space-y-2 sm:space-y-3 transition-all hover:-translate-y-0.5"
               >
                 <Icon size={28} className="mx-auto text-muted-foreground group-hover:text-accent transition-colors" />
                 <h3 className="font-medium">{name}</h3>
@@ -395,7 +395,7 @@ const Index = () => {
       {/* CTA Banner */}
       <section className="bg-sidebar text-sidebar-foreground py-16">
         <div className="max-w-3xl mx-auto px-4 text-center space-y-6">
-          <h2 className="text-3xl lg:text-4xl font-medium font-display">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-medium font-display">
             Ready to <span className="text-gradient">Automate</span>?
           </h2>
           <p className="text-sidebar-foreground/60">
