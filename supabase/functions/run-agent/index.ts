@@ -87,7 +87,10 @@ async function getPrompt(category: string, slug: string, config: Record<string, 
       let imageMarkdown = "";
       const includeImage = (config.include_image ?? "Yes") === "Yes";
       if (includeImage) {
-        const imagePrompt = `Create a professional, modern blog illustration for an article about: ${config.topic || config.writing_focus || "technology"}. The image should be clean, visually appealing, and suitable as a featured image for a blog post. Use a modern flat or semi-realistic style with vibrant but professional colors. No text in the image.`;
+        const illustrationPrompt = config.illustration_prompt || "";
+        const imagePrompt = illustrationPrompt
+          ? illustrationPrompt
+          : `A warm, personal, and organic hand-drawn digital illustration serving as a blog header for an article about: ${config.topic || config.writing_focus || "technology"}. The artwork features stylized figures and scenes integrated into the topic using rough brush strokes and visible grain textures for a handcrafted feel. Use a muted terracotta, mustard yellows, sage greens, and soft natural browns color palette with low contrast. The entire illustration has a subtle filmic grain and paper texture over the canvas. No text in the image. Aspect ratio 16:9.`;
         try {
           const lovableKey = Deno.env.get("LOVABLE_API_KEY");
           if (lovableKey) {
@@ -141,16 +144,17 @@ async function getPrompt(category: string, slug: string, config: Record<string, 
         ? `\n\nIMPORTANT: Do NOT write about any of these previously covered topics or angles:\n${previousTopics.map((t, i) => `${i + 1}. ${t}`).join("\n")}\nChoose a fresh, distinct angle that hasn't been covered yet.`
         : "";
 
-      const system = `You are an expert SEO content writer and researcher. You write engaging, well-structured blog posts that are backed by real sources and optimized for search engines.
+      const system = `You are an expert SEO content writer who writes viral, engaging blog posts. Your titles are SHORT (under 10 words), punchy, and clickbait-worthy — think curiosity gaps, power words, and unexpected angles.
 
 FORMATTING RULES:
+- The H1 title MUST be short, clickbait-worthy (under 10 words), and create a curiosity gap
+- Immediately after the title, write a 1-2 sentence meta description in *italics*
+- Then insert the provided image (if any) right after the meta description
 - Use ## for H2 headings, ### for H3 subheadings
 - Use bullet points for lists
 - Bold key terms with **bold**
-- Include a meta description at the top (italics, 1-2 sentences)
 - End with a clear call-to-action
 - Cite sources inline as [Source](url) when referencing specific data
-- Insert the provided image near the top of the post if one is included
 - Do NOT fabricate statistics — only use data found in the provided sources`;
 
       const user = `Write a ${config.word_count || "1000"}-word blog post.
@@ -159,15 +163,22 @@ ${config.writing_focus ? `Focus/Angle: ${config.writing_focus}` : ""}
 Tone: ${config.tone || "Informative"}
 Target Audience: ${config.target_audience || "General audience"}
 ${sourceContent ? `RESEARCH SOURCES — Extract insights, data, and facts from these:\n${sourceContent}` : "Draw on your knowledge to write an accurate, informative post."}
-${imageMarkdown ? `Include this image near the top of the post:\n${imageMarkdown}` : ""}
+${imageMarkdown ? `Insert this image RIGHT AFTER the italic meta description, BEFORE the first section:\n${imageMarkdown}` : ""}
 ${exclusionText}
 
-Structure:
-1. Meta description (italic, 1-2 sentences for SEO)
-2. Introduction (hook the reader)
-3. 3-4 main sections with ## headings
-4. Key takeaways or bullet summary
-5. Call-to-action
+CRITICAL STRUCTURE (follow this exact order):
+1. # Short Clickbait Title (under 10 words, curiosity-driven)
+2. *Meta description in italics (1-2 sentences for SEO)*
+3. Image (if provided — embed it here)
+4. Introduction paragraph (hook the reader)
+5. 3-4 main sections with ## headings
+6. Key takeaways or bullet summary
+7. Call-to-action
+
+The title MUST be short and clickbait-worthy. Examples of good titles:
+- "Your Birth Card Is Lying to You"
+- "The Hidden Pattern Running Your Life"
+- "Why You Can't Stop Chasing Goalposts"
 
 Write the full blog post now.`;
 

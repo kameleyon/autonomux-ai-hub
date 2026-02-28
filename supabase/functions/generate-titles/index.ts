@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
       ? `\n\nIMPORTANT - The following titles have ALREADY been written or are queued. Do NOT suggest similar or identical titles. Avoid overlapping themes, angles, or sub-topics:\n${existingList.map((t: string) => `- ${t}`).join("\n")}\n\nGenerate titles that explore COMPLETELY DIFFERENT angles, sub-topics, or perspectives not covered above.`
       : "";
 
-    const prompt = `Generate exactly 15 unique, compelling blog article titles based on these inputs.
+    const prompt = `Generate exactly 15 unique, SHORT, clickbait-worthy blog article titles based on these inputs.
 
 ${topic ? `Topic/Keyword: ${topic}` : ""}
 ${writing_focus ? `Writing Focus/Angle (PRIMARY): ${writing_focus}` : ""}
@@ -92,13 +92,20 @@ ${sourceContext ? `\nSource material for context:\n${sourceContext}` : ""}
 ${exclusionBlock}
 
 Requirements:
+- Each title MUST be UNDER 10 WORDS — short, punchy, irresistible
+- Use curiosity gaps, power words, unexpected angles
+- Create titles that make people NEED to click
 - Each title should cover a DIFFERENT angle or sub-topic
-- Titles MUST be directly relevant to the intended subject from Writing Focus + Topic + Sources
+- Titles MUST be directly relevant to the intended subject
 - If Writing Focus conflicts with Topic, PRIORITIZE Writing Focus
-- Titles should be SEO-friendly (50-70 characters ideal)
-- Vary the format: how-to, listicle, question, guide, opinion, case study, etc.
-- Make them compelling and click-worthy
+- Vary the format: provocative statements, questions, revelations, challenges
 - Number them 1-15
+
+Examples of great titles:
+- "Your Birth Card Is Lying to You"
+- "The Hidden Pattern Running Your Life"  
+- "Why You Can't Stop Chasing Goalposts"
+- "This Card Predicts Your Biggest Mistake"
 
 Return ONLY the numbered list of 15 titles, nothing else.`;
 
