@@ -164,12 +164,11 @@ const RunHistory = () => {
                         {run.output_summary && (
                           <div>
                             <span className="font-medium">Output:</span>
-                            <div className="mt-1 bg-background p-3 rounded-lg border max-h-[500px] overflow-y-auto prose prose-sm max-w-none dark:prose-invert [&_img]:w-full [&_img]:aspect-video [&_img]:object-cover [&_img]:rounded-lg [&_img]:my-4">
+                            <div className="mt-1 bg-background p-3 rounded-lg border max-h-[500px] overflow-y-auto prose prose-sm max-w-none dark:prose-invert">
                               <ReactMarkdown
-                                allowedElements={ALLOWED_MARKDOWN_ELEMENTS}
                                 components={{
                                   img: ({ node, ...props }) => (
-                                    <img {...props} loading="lazy" className="w-full aspect-video object-cover rounded-lg my-4" />
+                                    <img {...props} loading="lazy" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: '0.5rem', margin: '1rem 0' }} />
                                   ),
                                 }}
                               >
