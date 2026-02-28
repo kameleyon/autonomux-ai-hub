@@ -88,9 +88,10 @@ async function getPrompt(category: string, slug: string, config: Record<string, 
       const includeImage = (config.include_image ?? "Yes") === "Yes";
       if (includeImage) {
         const illustrationPrompt = config.illustration_prompt || "";
+        const articleTopic = config.topic || config.writing_focus || "technology";
         const imagePrompt = illustrationPrompt
           ? illustrationPrompt
-          : `A warm, personal, and organic hand-drawn digital illustration serving as a blog header for an article about: ${config.topic || config.writing_focus || "technology"}. The artwork features stylized figures and scenes integrated into the topic using rough brush strokes and visible grain textures for a handcrafted feel. Use a muted terracotta, mustard yellows, sage greens, and soft natural browns color palette with low contrast. The entire illustration has a subtle filmic grain and paper texture over the canvas. No text in the image. Aspect ratio 16:9.`;
+          : `A warm, personal, and organic hand-drawn digital illustration in WIDE LANDSCAPE 16:9 format serving as a blog header for an article about: ${articleTopic}. The artwork features stylized figures and scenes integrated into the topic. Style: rough brush strokes, visible grain textures, handcrafted feel, muted terracotta, mustard yellows, sage greens, and soft natural browns color palette with low contrast. Subtle filmic grain and paper texture over the canvas. IMPORTANT: The image MUST be wide landscape format (roughly 1280x720 or 16:9 ratio). No text in the image.`;
         try {
           const lovableKey = Deno.env.get("LOVABLE_API_KEY");
           if (lovableKey) {
@@ -101,7 +102,7 @@ async function getPrompt(category: string, slug: string, config: Record<string, 
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                model: "google/gemini-2.5-flash-image",
+                model: "google/gemini-3-pro-image-preview",
                 messages: [{ role: "user", content: imagePrompt }],
                 modalities: ["image", "text"],
               }),
