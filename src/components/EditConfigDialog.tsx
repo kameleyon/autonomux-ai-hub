@@ -49,6 +49,9 @@ const FRIENDLY_LABELS: Record<string, string> = {
   include_image: "Include a relevant image?",
 };
 
+// Fields that might get corrupted by queue popping — restore from title_generation_context
+const CONTEXT_FIELDS = ["topic", "source_urls", "writing_focus", "target_audience", "tone"];
+
 interface EditConfigDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -71,13 +74,19 @@ export function EditConfigDialog({ open, onOpenChange, deployment }: EditConfigD
   const fields = schema?.fields ?? [];
 
   const currentConfig = (deployment.config ?? {}) as Record<string, any>;
+  const savedContext = (currentConfig.title_generation_context ?? {}) as Record<string, string>;
   const [config, setConfig] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (open) {
       const initial: Record<string, string> = {};
       fields.forEach((f) => {
-        initial[f.name] = currentConfig[f.name] != null ? String(currentConfig[f.name]) : "";
+        // For context fields, prefer the preserved original value over potentially corrupted top-level
+        if (CONTEXT_FIELDS.includes(f.name) && savedContext[f.name]) {
+          initial[f.name] = savedContext[f.name];
+        } else {
+          initial[f.name] = currentConfig[f.name] != null ? String(currentConfig[f.name]) : "";
+        }
       });
       // Also include fields from currentConfig not in schema
       Object.keys(currentConfig).forEach((k) => {
