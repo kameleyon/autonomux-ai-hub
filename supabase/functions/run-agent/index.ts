@@ -591,7 +591,7 @@ Deno.serve(async (req) => {
     // Call OpenRouter with model fallback
     // Blog writer uses Gemini for higher-quality long-form content
     const MODELS = agent.slug === "blog-writer"
-      ? ["google/gemini-2.5-pro-preview", "anthropic/claude-sonnet-4", "openai/gpt-4o-mini"]
+      ? ["google/gemini-3.1-pro-preview", "google/gemini-3-flash-preview", "anthropic/claude-sonnet-4.6"]
       : ["anthropic/claude-sonnet-4", "openai/gpt-4o-mini"];
     let llmData: any = null;
     let llmError: string | null = null;
