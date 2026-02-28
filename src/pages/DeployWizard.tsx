@@ -18,7 +18,7 @@ import { CheckCircle, ArrowLeft, ArrowRight, Lock, Shield } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { encryptCredential } from "@/lib/credentials";
 
-const TEXTAREA_FIELDS = ["email_content", "input_text", "knowledge_base", "code", "transcript", "rules"];
+const TEXTAREA_FIELDS = ["email_content", "input_text", "knowledge_base", "code", "transcript", "rules", "source_urls"];
 
 const FRIENDLY_LABELS: Record<string, string> = {
   tone: "Choose your tone",
@@ -46,6 +46,9 @@ const FRIENDLY_LABELS: Record<string, string> = {
   fields_to_extract: "What data to extract?",
   transcript: "Paste the meeting transcript",
   output_type: "What kind of summary?",
+  source_urls: "Source URLs to research (comma-separated)",
+  writing_focus: "What angle or points to cover?",
+  include_image: "Include a relevant image?",
 };
 
 const DeployWizard = () => {

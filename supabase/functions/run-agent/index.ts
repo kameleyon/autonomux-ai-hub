@@ -33,7 +33,7 @@ function formatSearchResults(results: Array<{ title: string; url: string; descri
   return results.map((r, i) => `${i + 1}. ${r.title}\n   URL: ${r.url}\n   ${r.description}`).join("\n\n");
 }
 
-async function getPrompt(category: string, slug: string, config: Record<string, any>): Promise<{ system: string; user: string }> {
+async function getPrompt(category: string, slug: string, config: Record<string, any>, previousTopics: string[] = []): Promise<{ system: string; user: string }> {
   const configStr = JSON.stringify(config, null, 2);
 
   // Email Automation
@@ -52,6 +52,101 @@ async function getPrompt(category: string, slug: string, config: Record<string, 
         user: `Meeting transcript:\n---\n${config.transcript || "(none)"}\n---\nOutput type: ${config.output_type || "All"}\n\nProvide:\n1. Executive Summary (2-3 sentences)\n2. Key Discussion Points (bullet list)\n3. Decisions Made\n4. Action Items (with assignees if mentioned)\n5. Follow-up Items / Open Questions`,
       };
     }
+
+    // Enhanced Blog Writer
+    if (slug === "blog-writer") {
+      // Fetch source content if URLs provided
+      let sourceContent = "";
+      const sourceUrls = config.source_urls || "";
+      if (sourceUrls) {
+        const urls = sourceUrls.split(",").map((u: string) => u.trim()).filter(Boolean).slice(0, 3);
+        for (const url of urls) {
+          try {
+            const res = await fetch(url, {
+              headers: { "User-Agent": "Mozilla/5.0 (compatible; Autonomux/1.0)" },
+              signal: AbortSignal.timeout(5000),
+            });
+            if (res.ok) {
+              const html = await res.text();
+              const text = html
+                .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+                .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+                .replace(/<[^>]+>/g, " ")
+                .replace(/\s+/g, " ")
+                .trim()
+                .substring(0, 2000);
+              sourceContent += `\n\nSource (${url}):\n${text}`;
+            }
+          } catch {
+            // Skip failed sources silently
+          }
+        }
+      }
+
+      // Search for a relevant image using Brave Image Search
+      let imageMarkdown = "";
+      const includeImage = (config.include_image ?? "Yes") === "Yes";
+      if (includeImage) {
+        const imageQuery = config.topic || config.writing_focus || "blog article";
+        try {
+          const braveKey = Deno.env.get("BRAVE_SEARCH_API_KEY");
+          if (braveKey) {
+            const imgRes = await fetch(
+              `https://api.search.brave.com/res/v1/images/search?q=${encodeURIComponent(imageQuery)}&count=1&safesearch=strict`,
+              { headers: { Accept: "application/json", "X-Subscription-Token": braveKey } }
+            );
+            if (imgRes.ok) {
+              const imgData = await imgRes.json();
+              const firstImage = imgData.results?.[0];
+              if (firstImage?.url) {
+                imageMarkdown = `\n\n![${firstImage.title || imageQuery}](${firstImage.url})\n*Image source: ${firstImage.source || firstImage.url}*\n\n`;
+              }
+            }
+          }
+        } catch {
+          // Image fetch failed — continue without image
+        }
+      }
+
+      // Anti-repetition: build exclusion list from previous runs
+      const exclusionText = previousTopics.length > 0
+        ? `\n\nIMPORTANT: Do NOT write about any of these previously covered topics or angles:\n${previousTopics.map((t, i) => `${i + 1}. ${t}`).join("\n")}\nChoose a fresh, distinct angle that hasn't been covered yet.`
+        : "";
+
+      const system = `You are an expert SEO content writer and researcher. You write engaging, well-structured blog posts that are backed by real sources and optimized for search engines.
+
+FORMATTING RULES:
+- Use ## for H2 headings, ### for H3 subheadings
+- Use bullet points for lists
+- Bold key terms with **bold**
+- Include a meta description at the top (italics, 1-2 sentences)
+- End with a clear call-to-action
+- Cite sources inline as [Source](url) when referencing specific data
+- Insert the provided image near the top of the post if one is included
+- Do NOT fabricate statistics — only use data found in the provided sources`;
+
+      const user = `Write a ${config.word_count || "1000"}-word blog post.
+${config.topic ? `Topic: ${config.topic}` : ""}
+${config.writing_focus ? `Focus/Angle: ${config.writing_focus}` : ""}
+Tone: ${config.tone || "Informative"}
+Target Audience: ${config.target_audience || "General audience"}
+${sourceContent ? `RESEARCH SOURCES — Extract insights, data, and facts from these:\n${sourceContent}` : "Draw on your knowledge to write an accurate, informative post."}
+${imageMarkdown ? `Include this image near the top of the post:\n${imageMarkdown}` : ""}
+${exclusionText}
+
+Structure:
+1. Meta description (italic, 1-2 sentences for SEO)
+2. Introduction (hook the reader)
+3. 3-4 main sections with ## headings
+4. Key takeaways or bullet summary
+5. Call-to-action
+
+Write the full blog post now.`;
+
+      return { system, user };
+    }
+
+    // Default content creation fallback
     return {
       system: "You are an expert SEO content writer. Write engaging, well-structured blog posts with proper headings (H2, H3), bullet points, and actionable insights. Include a compelling introduction and a clear conclusion with a call-to-action. Use markdown formatting. Target the specified word count closely.",
       user: `Write a blog post about: ${config.topic || "AI Automation"}\nTone: ${config.tone || "Informative"}\nTarget word count: ${config.word_count || "1000"}\nTarget audience: ${config.target_audience || "General audience"}\n\nRequirements:\n- SEO-optimized with relevant keywords naturally integrated\n- Include at least 3 subheadings\n- Add specific examples or data points where relevant\n- End with a call-to-action`,
@@ -415,7 +510,29 @@ Deno.serve(async (req) => {
 
     // Build prompt (now async for web search)
     const config = (deployment.config as Record<string, any>) ?? {};
-    const { system, user: userMsg } = await getPrompt(agent.category, agent.slug, config);
+
+    // For blog-writer: fetch previous output titles to avoid repetition
+    let previousTopics: string[] = [];
+    if (agent.slug === "blog-writer") {
+      const { data: prevRuns } = await adminClient
+        .from("runs")
+        .select("output_summary")
+        .eq("deployment_id", deployment_id)
+        .eq("status", "success")
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (prevRuns && prevRuns.length > 0) {
+        previousTopics = prevRuns
+          .map((r: any) => {
+            const match = r.output_summary?.match(/^#{1,2}\s+(.+)$/m);
+            return match ? match[1] : null;
+          })
+          .filter(Boolean) as string[];
+      }
+    }
+
+    const { system, user: userMsg } = await getPrompt(agent.category, agent.slug, config, previousTopics);
 
     // Call OpenRouter with model fallback
     const MODELS = ["anthropic/claude-sonnet-4", "openai/gpt-4o-mini"];
@@ -437,7 +554,7 @@ Deno.serve(async (req) => {
               { role: "system", content: system },
               { role: "user", content: userMsg },
             ],
-            max_tokens: 4000,
+            max_tokens: agent.slug === "blog-writer" ? 6000 : 4000,
           }),
         });
 
