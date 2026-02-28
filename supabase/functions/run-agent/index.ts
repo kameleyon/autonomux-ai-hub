@@ -514,6 +514,18 @@ Deno.serve(async (req) => {
     // For blog-writer: fetch previous output titles to avoid repetition
     let previousTopics: string[] = [];
     if (agent.slug === "blog-writer") {
+      // Check for scheduled_topic_queue — pop the first title if available
+      const topicQueue: string[] = config.scheduled_topic_queue ?? [];
+      if (topicQueue.length > 0) {
+        const nextTopic = topicQueue.shift()!;
+        config.topic = nextTopic;
+        // Update deployment config with the remaining queue
+        await adminClient
+          .from("deployments")
+          .update({ config: { ...config, scheduled_topic_queue: topicQueue } })
+          .eq("id", deployment_id);
+      }
+
       const { data: prevRuns } = await adminClient
         .from("runs")
         .select("output_summary")

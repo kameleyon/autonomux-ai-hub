@@ -13,8 +13,9 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { CheckCircle, ArrowLeft, ArrowRight, Lock, Shield } from "lucide-react";
+import { CheckCircle, ArrowLeft, ArrowRight, Lock, Shield, Clock, Loader2, Sparkles } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { encryptCredential } from "@/lib/credentials";
 
@@ -51,6 +52,14 @@ const FRIENDLY_LABELS: Record<string, string> = {
   include_image: "Include a relevant image?",
 };
 
+const SCHEDULE_INTERVALS = [
+  { value: "every_hour", label: "Hourly", hint: "Good for email & social media" },
+  { value: "every_6_hours", label: "Every 6 hours", hint: "4 times per day" },
+  { value: "every_12_hours", label: "Every 12 hours", hint: "Morning & evening" },
+  { value: "daily", label: "Daily (9 AM UTC)", hint: "Most popular — once per day" },
+  { value: "weekly", label: "Weekly (Mon 9 AM UTC)", hint: "Great for reports & summaries" },
+];
+
 const DeployWizard = () => {
   const { agentId } = useParams<{ agentId: string }>();
   const navigate = useNavigate();
@@ -62,6 +71,13 @@ const DeployWizard = () => {
   const [deploying, setDeploying] = useState(false);
   const [deployed, setDeployed] = useState(false);
   const [countdown, setCountdown] = useState(5);
+
+  // Scheduling state
+  const [scheduleEnabled, setScheduleEnabled] = useState(false);
+  const [scheduleInterval, setScheduleInterval] = useState("daily");
+  const [generatingTitles, setGeneratingTitles] = useState(false);
+  const [suggestedTitles, setSuggestedTitles] = useState<string[]>([]);
+  const [selectedTitles, setSelectedTitles] = useState<Set<number>>(new Set());
 
   const { data: agent, isLoading } = useQuery({
     queryKey: ["deploy-agent", agentId],
@@ -116,6 +132,48 @@ const DeployWizard = () => {
     }
   }, [deployed, navigate]);
 
+  const isBlogWriter = agent?.slug === "blog-writer";
+
+  const handleGenerateTitles = async () => {
+    setGeneratingTitles(true);
+    setSuggestedTitles([]);
+    setSelectedTitles(new Set());
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-titles", {
+        body: {
+          topic: config.topic || "",
+          source_urls: config.source_urls || "",
+          writing_focus: config.writing_focus || "",
+          target_audience: config.target_audience || "",
+          tone: config.tone || "",
+        },
+      });
+      if (error) throw error;
+      if (data?.titles?.length > 0) {
+        setSuggestedTitles(data.titles);
+      } else {
+        toast.error("No titles generated. Try adding a topic or source URLs.");
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to generate titles";
+      toast.error(message);
+    } finally {
+      setGeneratingTitles(false);
+    }
+  };
+
+  const toggleTitle = (index: number) => {
+    setSelectedTitles((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -167,10 +225,19 @@ const DeployWizard = () => {
         }
       }
 
+      // Build final config with topic queue if scheduling
+      const finalConfig = { ...config };
+      if (scheduleEnabled && isBlogWriter && selectedTitles.size > 0) {
+        const queue = Array.from(selectedTitles)
+          .sort((a, b) => a - b)
+          .map((i) => suggestedTitles[i]);
+        (finalConfig as any).scheduled_topic_queue = queue;
+      }
+
       const { data: deployment, error } = await supabase.from("deployments").insert({
         user_id: user.id,
         agent_id: agent.id,
-        config,
+        config: finalConfig,
         status: "active",
       }).select().single();
 
@@ -178,6 +245,17 @@ const DeployWizard = () => {
         toast.error("Failed to set up: " + error.message);
         setDeploying(false);
         return;
+      }
+
+      // If scheduling enabled, set it up
+      if (scheduleEnabled) {
+        try {
+          await supabase.functions.invoke("schedule-agent", {
+            body: { deployment_id: deployment.id, action: "enable", interval: scheduleInterval },
+          });
+        } catch {
+          toast.info("Agent deployed but scheduling may need manual setup.");
+        }
       }
 
       try {
@@ -207,7 +285,7 @@ const DeployWizard = () => {
           </div>
           <h1 className="text-3xl font-medium font-display">Your Agent is Live and Running!</h1>
           <p className="text-muted-foreground">{agent.name} is running! Redirecting to your results in {countdown}s...</p>
-          <div className="flex justify-center gap-4">
+          <div className="flex flex-wrap justify-center gap-4">
             <Button variant="gradient" asChild>
               <Link to="/dashboard">Go to Dashboard</Link>
             </Button>
@@ -222,6 +300,10 @@ const DeployWizard = () => {
       </div>
     );
   }
+
+  const runsPerDay: Record<string, number> = {
+    every_hour: 24, every_6_hours: 4, every_12_hours: 2, daily: 1, weekly: 0.14,
+  };
 
   return (
     <div className="bg-background min-h-screen">
@@ -388,6 +470,117 @@ const DeployWizard = () => {
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">API Keys</span>
                     <span className="text-accent">None required ✓</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Scheduling Section */}
+              <div className="border border-border rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock size={16} className="text-muted-foreground" />
+                    <span className="text-sm font-medium">Run on a schedule</span>
+                  </div>
+                  <Switch
+                    checked={scheduleEnabled}
+                    onCheckedChange={setScheduleEnabled}
+                  />
+                </div>
+
+                {scheduleEnabled && (
+                  <div className="space-y-4 pt-2">
+                    <div className="space-y-2">
+                      <Label className="text-sm">How often?</Label>
+                      <Select value={scheduleInterval} onValueChange={setScheduleInterval}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SCHEDULE_INTERVALS.map((i) => (
+                            <SelectItem key={i.value} value={i.value}>
+                              <span>{i.label}</span>
+                              <span className="text-xs text-muted-foreground ml-2">— {i.hint}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        💡 Estimated cost: ~{Math.round((runsPerDay[scheduleInterval] ?? 1) * 30 * agent.base_credit_cost)} credits/month
+                      </p>
+                    </div>
+
+                    {/* Blog Writer: Title Generation */}
+                    {isBlogWriter && (
+                      <div className="space-y-3 border-t border-border pt-4">
+                        <div className="flex items-center justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-medium">Pre-plan your content</p>
+                            <p className="text-xs text-muted-foreground">
+                              Generate 15 article title suggestions — select which ones to queue for scheduled writing.
+                            </p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleGenerateTitles}
+                            disabled={generatingTitles}
+                          >
+                            {generatingTitles ? (
+                              <Loader2 size={14} className="mr-1 animate-spin" />
+                            ) : (
+                              <Sparkles size={14} className="mr-1" />
+                            )}
+                            {generatingTitles ? "Generating..." : suggestedTitles.length > 0 ? "Regenerate" : "Generate Titles"}
+                          </Button>
+                        </div>
+
+                        {suggestedTitles.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs text-muted-foreground">
+                                {selectedTitles.size} of {suggestedTitles.length} selected
+                              </p>
+                              <button
+                                className="text-xs text-accent hover:underline"
+                                onClick={() => {
+                                  if (selectedTitles.size === suggestedTitles.length) {
+                                    setSelectedTitles(new Set());
+                                  } else {
+                                    setSelectedTitles(new Set(suggestedTitles.map((_, i) => i)));
+                                  }
+                                }}
+                              >
+                                {selectedTitles.size === suggestedTitles.length ? "Deselect all" : "Select all"}
+                              </button>
+                            </div>
+                            <div className="max-h-[300px] overflow-y-auto space-y-1.5 pr-1">
+                              {suggestedTitles.map((title, index) => (
+                                <label
+                                  key={index}
+                                  className={`flex items-start gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors text-sm ${
+                                    selectedTitles.has(index)
+                                      ? "bg-accent/10 border border-accent/30"
+                                      : "bg-muted/50 border border-transparent hover:bg-muted"
+                                  }`}
+                                >
+                                  <Checkbox
+                                    checked={selectedTitles.has(index)}
+                                    onCheckedChange={() => toggleTitle(index)}
+                                    className="mt-0.5"
+                                  />
+                                  <span className="leading-snug">{title}</span>
+                                </label>
+                              ))}
+                            </div>
+                            {selectedTitles.size > 0 && (
+                              <p className="text-xs text-accent font-medium">
+                                ✓ {selectedTitles.size} articles queued — the agent will write one per scheduled run
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
