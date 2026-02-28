@@ -83,28 +83,56 @@ async function getPrompt(category: string, slug: string, config: Record<string, 
         }
       }
 
-      // Search for a relevant image using Brave Image Search
+      // Generate an AI illustration using Lovable AI image generation
       let imageMarkdown = "";
       const includeImage = (config.include_image ?? "Yes") === "Yes";
       if (includeImage) {
-        const imageQuery = config.topic || config.writing_focus || "blog article";
+        const imagePrompt = `Create a professional, modern blog illustration for an article about: ${config.topic || config.writing_focus || "technology"}. The image should be clean, visually appealing, and suitable as a featured image for a blog post. Use a modern flat or semi-realistic style with vibrant but professional colors. No text in the image.`;
         try {
-          const braveKey = Deno.env.get("BRAVE_SEARCH_API_KEY");
-          if (braveKey) {
-            const imgRes = await fetch(
-              `https://api.search.brave.com/res/v1/images/search?q=${encodeURIComponent(imageQuery)}&count=1&safesearch=strict`,
-              { headers: { Accept: "application/json", "X-Subscription-Token": braveKey } }
-            );
+          const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+          if (lovableKey) {
+            const imgRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${lovableKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: "google/gemini-2.5-flash-image",
+                messages: [{ role: "user", content: imagePrompt }],
+                modalities: ["image", "text"],
+              }),
+            });
+
             if (imgRes.ok) {
               const imgData = await imgRes.json();
-              const firstImage = imgData.results?.[0];
-              if (firstImage?.url) {
-                imageMarkdown = `\n\n![${firstImage.title || imageQuery}](${firstImage.url})\n*Image source: ${firstImage.source || firstImage.url}*\n\n`;
+              const generatedImage = imgData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+              if (generatedImage) {
+                // Upload base64 image to storage
+                const base64Data = generatedImage.replace(/^data:image\/\w+;base64,/, "");
+                const imageBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
+                const fileName = `blog-${Date.now()}-${crypto.randomUUID().slice(0, 8)}.png`;
+
+                const storageClient = createClient(
+                  Deno.env.get("SUPABASE_URL")!,
+                  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+                );
+
+                const { error: uploadErr } = await storageClient.storage
+                  .from("blog-images")
+                  .upload(fileName, imageBytes, { contentType: "image/png", upsert: false });
+
+                if (!uploadErr) {
+                  const { data: publicUrl } = storageClient.storage
+                    .from("blog-images")
+                    .getPublicUrl(fileName);
+                  imageMarkdown = `\n\n![Article illustration](${publicUrl.publicUrl})\n\n`;
+                }
               }
             }
           }
         } catch {
-          // Image fetch failed — continue without image
+          // Image generation failed — continue without image
         }
       }
 
