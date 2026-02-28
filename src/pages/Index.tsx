@@ -8,6 +8,7 @@ import { Star, ArrowRight, Search, Settings, Rocket, Mail, PenLine, SearchCheck,
 import logo from "@/assets/logo.png";
 import { iconMap, defaultAgentIcon } from "@/lib/icons";
 import { APP_CATEGORIES } from "@/lib/categories";
+import { SEO } from "@/components/SEO";
 
 const Index = () => {
   const { data: agents } = useQuery({
@@ -40,7 +41,11 @@ const Index = () => {
 
   return (
     <div className="bg-background">
-      {/* Hero */}
+      <SEO
+        title="Autonomux — AI Agents That Work For You | Free to Start"
+        description="Pick an AI agent, tell it what you need, get results in seconds. Blog posts, email replies, lead lists — all automated. 25 free credits, no credit card."
+        url="https://autonomux.lovable.app/"
+      />
       <section className="relative bg-secondary/30 dark:bg-sidebar text-foreground dark:text-sidebar-foreground overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-32 flex flex-col lg:flex-row items-center gap-8 lg:gap-12" style={{ minHeight: "85vh" }}>
           <div className="flex-1 text-center lg:text-left space-y-6">

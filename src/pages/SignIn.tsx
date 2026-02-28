@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import { SEO } from "@/components/SEO";
 
 const SignIn = () => {
   const navigate = useNavigate();
@@ -38,6 +39,11 @@ const SignIn = () => {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-background">
+      <SEO
+        title="Sign In | Autonomux"
+        description="Sign in to your Autonomux account to access your AI agents and dashboard."
+        url="https://autonomux.lovable.app/signin"
+      />
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
           <Link to="/" className="flex items-center justify-center gap-2">

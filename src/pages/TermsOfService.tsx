@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { SEO } from "@/components/SEO";
 
 const TermsOfService = () => (
   <div className="max-w-3xl mx-auto px-4 py-12">
+    <SEO title="Terms of Service | Autonomux" url="https://autonomux.lovable.app/terms" />
     <Link to="/" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-6">
       <ArrowLeft size={14} /> Back to Home
     </Link>

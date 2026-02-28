@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
+import { SEO } from "@/components/SEO";
 
 const plans = [
   {
@@ -43,7 +44,11 @@ const Pricing = () => {
 
   return (
     <div className="bg-background animate-fade-in">
-      {/* Header */}
+      <SEO
+        title="Pricing — Start Free with 25 Credits | Autonomux"
+        description="Autonomux is free to start. 25 credits included, no credit card required. Credit packs from $10. Pro plans from $29/month."
+        url="https://autonomux.lovable.app/pricing"
+      />
       <section className="py-16 lg:py-24 text-center">
         <div className="max-w-3xl mx-auto px-4 space-y-4">
           <Badge variant="accent" className="mb-2">Pricing</Badge>

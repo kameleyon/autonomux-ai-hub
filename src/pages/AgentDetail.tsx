@@ -13,6 +13,7 @@ import {
   BarChart2,
 } from "lucide-react";
 import { iconMap, defaultAgentIcon } from "@/lib/icons";
+import { SEO } from "@/components/SEO";
 
 const AgentDetail = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -129,6 +130,13 @@ const AgentDetail = () => {
 
   return (
     <div className="bg-background min-h-screen">
+      {agent && (
+        <SEO
+          title={`${agent.name} — AI Agent | Autonomux`}
+          description={`${agent.description} Start for ${agent.base_credit_cost} credits (~$${(agent.base_credit_cost * 0.10).toFixed(2)}) per run.`}
+          url={`https://autonomux.lovable.app/marketplace/${agent.slug}`}
+        />
+      )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Link to="/marketplace" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-6">
           <ArrowLeft size={14} /> Back to Marketplace
