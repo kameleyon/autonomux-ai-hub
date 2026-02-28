@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
-  Star, ArrowLeft, Lock, Clock, CheckCircle, Users, Calendar, Rocket, Zap, Loader2,
+  Star, ArrowLeft, Lock, Clock, CheckCircle, Users, Calendar, Zap, Loader2,
   BarChart2,
 } from "lucide-react";
 import { iconMap, defaultAgentIcon } from "@/lib/icons";
@@ -158,10 +158,10 @@ const AgentDetail = () => {
               </Button>
             ) : (
               <Button variant="gradient" size="lg" asChild>
-                <Link to={`/deploy/${agent.id}`}>Deploy This Agent</Link>
+                <Link to={`/deploy/${agent.id}`}>Set Up This Agent</Link>
               </Button>
             )}
-            <p className="text-xs text-center text-muted-foreground">{agent.base_credit_cost} credits per run</p>
+            <p className="text-xs text-center text-muted-foreground">{agent.base_credit_cost} credits per run (~${(agent.base_credit_cost * 0.10).toFixed(2)})</p>
           </div>
         </div>
 
@@ -170,8 +170,8 @@ const AgentDetail = () => {
             <Tabs defaultValue="overview">
               <TabsList>
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="config">Configuration</TabsTrigger>
-                <TabsTrigger value="reviews">Reviews</TabsTrigger>
+                <TabsTrigger value="config">Setup Preview</TabsTrigger>
+                <TabsTrigger value="output">Example Output</TabsTrigger>
               </TabsList>
               <TabsContent value="overview" className="mt-6 space-y-6">
                 <div>
@@ -194,18 +194,55 @@ const AgentDetail = () => {
               </TabsContent>
               <TabsContent value="config" className="mt-6">
                 <Card>
-                  <CardContent className="p-5">
-                    <h3 className="font-medium mb-3">Configuration Schema</h3>
-                    <pre className="text-xs bg-muted p-4 rounded-lg overflow-x-auto">
-                      {JSON.stringify(agent.config_schema, null, 2)}
-                    </pre>
+                  <CardContent className="p-5 space-y-4">
+                    <h3 className="font-medium mb-1">What You'll Set Up</h3>
+                    <p className="text-sm text-muted-foreground mb-4">When you set up this agent, you'll configure these simple options:</p>
+                    {(() => {
+                      const schema = agent.config_schema as { fields?: Array<{ name: string; type: string; options?: string[]; default?: string; label?: string; placeholder?: string }> } | null;
+                      const fields = schema?.fields ?? [];
+                      if (fields.length === 0) return <p className="text-sm text-muted-foreground">No configuration needed — this agent works out of the box!</p>;
+                      return (
+                        <div className="space-y-3">
+                          {fields.map((field) => (
+                            <div key={field.name} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                              <div className="w-2 h-2 rounded-full bg-accent mt-2 shrink-0" />
+                              <div>
+                                <p className="text-sm font-medium capitalize">{field.name.replace(/_/g, " ")}</p>
+                                {field.type === "select" && field.options ? (
+                                  <p className="text-xs text-muted-foreground">Choose from: {field.options.join(", ")}</p>
+                                ) : (
+                                  <p className="text-xs text-muted-foreground">
+                                    {field.placeholder || field.label || (field.default ? `Example: "${field.default}"` : "You'll type this in")}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </CardContent>
                 </Card>
               </TabsContent>
-              <TabsContent value="reviews" className="mt-6">
-                <div className="text-center py-12 text-muted-foreground">
-                  <p>No reviews yet. Deploy this agent and be the first to review!</p>
-                </div>
+              <TabsContent value="output" className="mt-6">
+                <Card>
+                  <CardContent className="p-5 space-y-4">
+                    <h3 className="font-medium">What This Agent Produces</h3>
+                    {(agent as any).example_output ? (
+                      <div className="p-4 rounded-lg bg-muted/50 border-l-4 border-accent">
+                        <p className="text-sm text-muted-foreground">{(agent as any).example_output}</p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Run this agent to see real results — output appears in your dashboard within seconds.</p>
+                    )}
+                    <div className="pt-2">
+                      <p className="text-xs text-muted-foreground">
+                        ⏱️ Average delivery: {agentStats?.avgDuration ? `${Math.round(agentStats.avgDuration)} seconds` : "under 30 seconds"} · 
+                        💰 Cost: {agent.base_credit_cost} credits (~${(agent.base_credit_cost * 0.10).toFixed(2)})
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           </div>
@@ -217,7 +254,7 @@ const AgentDetail = () => {
                 <div className="space-y-3 text-sm">
                   {[
                     { icon: BarChart2, label: "Category", value: agent.category },
-                    { icon: Star, label: "Cost", value: `${agent.base_credit_cost} credits/run` },
+                    { icon: Star, label: "Cost", value: `${agent.base_credit_cost} credits (~$${(agent.base_credit_cost * 0.10).toFixed(2)})/run` },
                     { icon: Clock, label: "Avg Run Time", value: agentStats?.avgDuration ? `${Math.round(agentStats.avgDuration)}s` : "No data" },
                     { icon: CheckCircle, label: "Success Rate", value: agentStats?.successRate != null ? `${agentStats.successRate}%` : "No data" },
                     { icon: Users, label: "Deployments", value: String(agent.total_deployments) },
@@ -248,6 +285,18 @@ const AgentDetail = () => {
               </Card>
             )}
 
+            {credentials.length === 0 && (
+              <Card>
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-2 text-sm text-accent">
+                    <CheckCircle size={16} />
+                    <span className="font-medium">No API keys or credentials needed</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">This agent works right away — just set your preferences and go.</p>
+                </CardContent>
+              </Card>
+            )}
+
             {activeDeployment ? (
               <Button variant="gradient" className="w-full" onClick={handleRunNow} disabled={running}>
                 {running ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Zap size={16} className="mr-2" />}
@@ -255,7 +304,7 @@ const AgentDetail = () => {
               </Button>
             ) : (
               <Button variant="gradient" className="w-full" asChild>
-                <Link to={`/deploy/${agent.id}`}>Deploy This Agent</Link>
+                <Link to={`/deploy/${agent.id}`}>Set Up This Agent</Link>
               </Button>
             )}
           </aside>

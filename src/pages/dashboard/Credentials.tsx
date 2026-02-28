@@ -12,7 +12,6 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Trash2, KeyRound, ShieldCheck, PenLine } from "lucide-react";
@@ -167,43 +166,18 @@ const Credentials = () => {
       ) : (creds ?? []).length === 0 ? (
         <Card><CardContent className="p-8 text-center text-xs text-muted-foreground">No credentials stored yet.</CardContent></Card>
       ) : (
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Type</TableHead>
-                <TableHead>Value</TableHead>
-                <TableHead>Used By</TableHead>
-                <TableHead>Added</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(creds ?? []).map((cred) => {
-                const usedBy = getAgentsForType(cred.credential_type);
-                return (
-                  <TableRow key={cred.id}>
-                    <TableCell className="font-medium text-sm flex items-center gap-2">
-                      <KeyRound size={14} className="text-muted-foreground" />
-                      {cred.credential_type}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">••••••••</TableCell>
-                    <TableCell>
-                      {usedBy.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {usedBy.slice(0, 3).map((name) => (
-                            <Badge key={name} variant="outline" className="text-xs font-normal">{name}</Badge>
-                          ))}
-                          {usedBy.length > 3 && (
-                            <Badge variant="outline" className="text-xs font-normal">+{usedBy.length - 3}</Badge>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{new Date(cred.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-right space-x-1">
+        <div className="space-y-2">
+          {(creds ?? []).map((cred) => {
+            const usedBy = getAgentsForType(cred.credential_type);
+            return (
+              <Card key={cred.id}>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <KeyRound size={14} className="text-muted-foreground shrink-0" />
+                      <span className="font-medium text-sm truncate">{cred.credential_type}</span>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
                       <Button variant="ghost" size="icon" onClick={() => { setEditingCred({ id: cred.id, type: cred.credential_type }); setEditValue(""); }}>
                         <PenLine size={16} className="text-muted-foreground" />
                       </Button>
@@ -225,12 +199,26 @@ const Credentials = () => {
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
+                    <span>••••••••</span>
+                    <span>Added {new Date(cred.created_at).toLocaleDateString()}</span>
+                  </div>
+                  {usedBy.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {usedBy.slice(0, 3).map((name) => (
+                        <Badge key={name} variant="outline" className="text-xs font-normal">{name}</Badge>
+                      ))}
+                      {usedBy.length > 3 && (
+                        <Badge variant="outline" className="text-xs font-normal">+{usedBy.length - 3}</Badge>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { useRealtimeStatus } from "@/hooks/useRealtimeStatus";
 import {
-  LayoutDashboard, Bot, History, CreditCard, KeyRound, Settings, LogOut, Sun, Moon, ChevronUp,
+  LayoutDashboard, Bot, History, CreditCard, KeyRound, Settings, LogOut, Sun, Moon, ChevronUp, BarChart3,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import {
@@ -17,9 +17,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
   SidebarSeparator,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
@@ -36,6 +34,7 @@ const links = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { label: "My Agents", href: "/dashboard/agents", icon: Bot },
   { label: "Run History", href: "/dashboard/runs", icon: History },
+  { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
   { label: "Billing", href: "/dashboard/billing", icon: CreditCard },
   { label: "Credentials", href: "/dashboard/credentials", icon: KeyRound },
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
@@ -66,10 +65,8 @@ const DashboardSidebar = () => {
 
   return (
     <Sidebar collapsible="icon">
-      {/* Brand */}
-      <SidebarHeader className="p-3" />
-
-      <SidebarSeparator />
+      {/* Spacer to align with header height */}
+      <SidebarHeader className="h-12 shrink-0" />
 
       {/* Navigation */}
       <SidebarContent>
@@ -149,7 +146,6 @@ const DashboardSidebar = () => {
         </SidebarMenu>
       </SidebarFooter>
 
-      <SidebarRail />
     </Sidebar>
   );
 };

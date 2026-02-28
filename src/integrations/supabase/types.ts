@@ -22,6 +22,7 @@ export type Database = {
           created_at: string
           creator_id: string | null
           description: string
+          example_output: string | null
           icon_url: string | null
           id: string
           is_published: boolean
@@ -42,6 +43,7 @@ export type Database = {
           created_at?: string
           creator_id?: string | null
           description: string
+          example_output?: string | null
           icon_url?: string | null
           id?: string
           is_published?: boolean
@@ -62,6 +64,7 @@ export type Database = {
           created_at?: string
           creator_id?: string | null
           description?: string
+          example_output?: string | null
           icon_url?: string | null
           id?: string
           is_published?: boolean
@@ -76,6 +79,60 @@ export type Database = {
           version?: string | null
         }
         Relationships: []
+      }
+      approval_requests: {
+        Row: {
+          action_description: string
+          action_payload: Json | null
+          created_at: string
+          deployment_id: string
+          expires_at: string
+          id: string
+          responded_at: string | null
+          run_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          action_description: string
+          action_payload?: Json | null
+          created_at?: string
+          deployment_id: string
+          expires_at?: string
+          id?: string
+          responded_at?: string | null
+          run_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          action_description?: string
+          action_payload?: Json | null
+          created_at?: string
+          deployment_id?: string
+          expires_at?: string
+          id?: string
+          responded_at?: string | null
+          run_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_requests_deployment_id_fkey"
+            columns: ["deployment_id"]
+            isOneToOne: false
+            referencedRelation: "deployments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approval_requests_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "runs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       deployments: {
         Row: {
@@ -170,6 +227,10 @@ export type Database = {
           credits_balance: number
           display_name: string | null
           id: string
+          notification_email: string | null
+          notify_on_run_complete: boolean | null
+          notify_on_run_failed: boolean | null
+          notify_on_schedule_fail: boolean | null
           plan_tier: Database["public"]["Enums"]["plan_tier"]
           updated_at: string
           user_id: string
@@ -180,6 +241,10 @@ export type Database = {
           credits_balance?: number
           display_name?: string | null
           id?: string
+          notification_email?: string | null
+          notify_on_run_complete?: boolean | null
+          notify_on_run_failed?: boolean | null
+          notify_on_schedule_fail?: boolean | null
           plan_tier?: Database["public"]["Enums"]["plan_tier"]
           updated_at?: string
           user_id: string
@@ -190,6 +255,10 @@ export type Database = {
           credits_balance?: number
           display_name?: string | null
           id?: string
+          notification_email?: string | null
+          notify_on_run_complete?: boolean | null
+          notify_on_run_failed?: boolean | null
+          notify_on_schedule_fail?: boolean | null
           plan_tier?: Database["public"]["Enums"]["plan_tier"]
           updated_at?: string
           user_id?: string
@@ -198,6 +267,7 @@ export type Database = {
       }
       runs: {
         Row: {
+          api_cost_cents: number | null
           completed_at: string | null
           created_at: string
           credits_used: number | null
@@ -205,11 +275,14 @@ export type Database = {
           error_message: string | null
           id: string
           input_summary: string | null
+          model_used: string | null
           output_summary: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["run_status"]
+          tokens_used: number | null
         }
         Insert: {
+          api_cost_cents?: number | null
           completed_at?: string | null
           created_at?: string
           credits_used?: number | null
@@ -217,11 +290,14 @@ export type Database = {
           error_message?: string | null
           id?: string
           input_summary?: string | null
+          model_used?: string | null
           output_summary?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["run_status"]
+          tokens_used?: number | null
         }
         Update: {
+          api_cost_cents?: number | null
           completed_at?: string | null
           created_at?: string
           credits_used?: number | null
@@ -229,9 +305,11 @@ export type Database = {
           error_message?: string | null
           id?: string
           input_summary?: string | null
+          model_used?: string | null
           output_summary?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["run_status"]
+          tokens_used?: number | null
         }
         Relationships: [
           {
@@ -357,6 +435,19 @@ export type Database = {
         Args: { p_amount: number; p_user_id: string }
         Returns: number
       }
+      get_user_analytics: {
+        Args: { p_days?: number; p_user_id: string }
+        Returns: {
+          agent_category: string
+          agent_name: string
+          created_at: string
+          credits_used: number
+          duration_seconds: number
+          run_date: string
+          run_id: string
+          status: Database["public"]["Enums"]["run_status"]
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -368,6 +459,17 @@ export type Database = {
         Args: { p_amount: number; p_user_id: string }
         Returns: number
       }
+      schedule_cron_job: {
+        Args: {
+          p_auth_header: string
+          p_cron_expr: string
+          p_deployment_id: string
+          p_job_name: string
+          p_url: string
+        }
+        Returns: number
+      }
+      unschedule_cron_job: { Args: { p_job_name: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

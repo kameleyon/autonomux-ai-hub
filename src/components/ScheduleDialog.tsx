@@ -21,12 +21,13 @@ import { Clock, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 const INTERVALS = [
-  { value: "every_15_min", label: "Every 15 minutes" },
-  { value: "every_hour", label: "Hourly" },
-  { value: "every_6_hours", label: "Every 6 hours" },
-  { value: "every_12_hours", label: "Every 12 hours" },
-  { value: "daily", label: "Daily (9 AM UTC)" },
-  { value: "weekly", label: "Weekly (Mon 9 AM UTC)" },
+  { value: "every_3_min", label: "Every 3 minutes", hint: "For testing only" },
+  { value: "every_15_min", label: "Every 15 minutes", hint: "Best for real-time monitoring" },
+  { value: "every_hour", label: "Hourly", hint: "Good for email & social media" },
+  { value: "every_6_hours", label: "Every 6 hours", hint: "4 times per day" },
+  { value: "every_12_hours", label: "Every 12 hours", hint: "Morning & evening" },
+  { value: "daily", label: "Daily (9 AM UTC)", hint: "Most popular — once per day" },
+  { value: "weekly", label: "Weekly (Mon 9 AM UTC)", hint: "Great for reports & summaries" },
 ];
 
 interface ScheduleDialogProps {
@@ -36,6 +37,7 @@ interface ScheduleDialogProps {
   currentInterval: string | null;
   scheduleEnabled: boolean;
   nextRunAt: string | null;
+  creditCost?: number;
 }
 
 export function ScheduleDialog({
@@ -45,6 +47,7 @@ export function ScheduleDialog({
   currentInterval,
   scheduleEnabled,
   nextRunAt,
+  creditCost = 1,
 }: ScheduleDialogProps) {
   const qc = useQueryClient();
   const [interval, setInterval] = useState(currentInterval ?? "every_hour");
@@ -72,16 +75,21 @@ export function ScheduleDialog({
     },
   });
 
+  const runsPerDay: Record<string, number> = {
+    every_3_min: 480, every_15_min: 96, every_hour: 24, every_6_hours: 4,
+    every_12_hours: 2, daily: 1, weekly: 0.14,
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Clock size={18} />
-            Schedule Agent
+            Run Automatically
           </DialogTitle>
           <DialogDescription>
-            Configure automatic recurring runs for this agent.
+            Set this agent to run on a schedule — it'll work in the background and you'll see results in your dashboard.
           </DialogDescription>
         </DialogHeader>
 
@@ -107,7 +115,7 @@ export function ScheduleDialog({
           )}
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Frequency</label>
+            <label className="text-sm font-medium">How often should it run?</label>
             <Select value={interval} onValueChange={setInterval}>
               <SelectTrigger>
                 <SelectValue />
@@ -115,11 +123,15 @@ export function ScheduleDialog({
               <SelectContent>
                 {INTERVALS.map((i) => (
                   <SelectItem key={i.value} value={i.value}>
-                    {i.label}
+                    <span>{i.label}</span>
+                    <span className="text-xs text-muted-foreground ml-2">— {i.hint}</span>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              💡 Estimated cost: ~{Math.round((runsPerDay[interval] ?? 1) * 30 * creditCost)} credits/month at current frequency
+            </p>
           </div>
 
           <div className="flex gap-2 pt-2">

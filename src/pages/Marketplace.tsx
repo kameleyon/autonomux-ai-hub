@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Star, Search, Rocket, Filter, X } from "lucide-react";
+import { Star, Search, ArrowRight, Filter, X } from "lucide-react";
 import { iconMap, defaultAgentIcon } from "@/lib/icons";
 import { CATEGORY_NAMES } from "@/lib/categories";
 
@@ -25,7 +25,6 @@ const Marketplace = () => {
   const [creditRange, setCreditRange] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
 
-  // Sync category from URL on subsequent navigations
   useEffect(() => {
     const cat = searchParams.get("category");
     if (cat) {
@@ -66,6 +65,11 @@ const Marketplace = () => {
     else if (sortBy === "newest") list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     else if (sortBy === "price") list.sort((a, b) => a.base_credit_cost - b.base_credit_cost);
     else if (sortBy === "rating") list.sort((a, b) => Number(b.rating) - Number(a.rating));
+    else if (sortBy === "beginner") list.sort((a, b) => {
+      const aComplexity = (a.required_credentials?.length ?? 0) * 10 + a.base_credit_cost;
+      const bComplexity = (b.required_credentials?.length ?? 0) * 10 + b.base_credit_cost;
+      return aComplexity - bComplexity;
+    });
     return list;
   }, [agents, searchTerm, selectedCategories, sortBy, creditRange]);
 
@@ -80,7 +84,7 @@ const Marketplace = () => {
       <div className="flex items-center justify-between">
         <h3 className="font-medium">Categories</h3>
         {selectedCategories.length > 0 && (
-          <button onClick={() => setSelectedCategories([])} className="text-xs text-primary hover:underline">
+          <button onClick={() => setSelectedCategories([])} className="text-xs text-accent hover:underline">
             Clear
           </button>
         )}
@@ -126,7 +130,8 @@ const Marketplace = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-medium font-display mb-2">Agent Marketplace</h1>
-          <p className="text-muted-foreground">Browse and deploy AI agents for any task</p>
+          <p className="text-muted-foreground">Pick an AI agent, set it up in clicks, and get results in seconds</p>
+          <p className="text-xs text-accent mt-1">🎉 Every account starts with 25 free credits — no credit card needed</p>
         </div>
 
         {/* Search + Sort */}
@@ -156,6 +161,7 @@ const Marketplace = () => {
                 <SelectItem value="rating">Highest Rated</SelectItem>
                 <SelectItem value="newest">Newest</SelectItem>
                 <SelectItem value="price">Lowest Price</SelectItem>
+                <SelectItem value="beginner">Beginner Friendly</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -209,13 +215,18 @@ const Marketplace = () => {
                           </div>
                           <h3 className="font-medium text-lg">{agent.name}</h3>
                           <p className="text-sm text-muted-foreground line-clamp-2">{agent.description}</p>
+                          {(agent as any).example_output && (
+                            <p className="text-xs text-accent/80 line-clamp-1">
+                              → You get: {(agent as any).example_output}
+                            </p>
+                          )}
                           <div className="flex gap-2">
                             <Badge variant="accent">{agent.category}</Badge>
-                            <Badge variant="secondary">{agent.base_credit_cost} credits</Badge>
+                            <Badge variant="secondary">~${(agent.base_credit_cost * 0.10).toFixed(2)}/run</Badge>
                           </div>
                           <div className="flex items-center justify-between pt-1">
                             <span className="text-xs text-muted-foreground">{agent.total_deployments} deployments</span>
-                            <span className="text-xs text-accent flex items-center gap-1">Deploy <Rocket size={12} /></span>
+                            <span className="text-xs text-accent flex items-center gap-1">Get Started <ArrowRight size={12} /></span>
                           </div>
                         </CardContent>
                       </Card>

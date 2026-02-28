@@ -13,12 +13,54 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { CheckCircle, ArrowLeft, ArrowRight, Lock, Shield } from "lucide-react";
+import { CheckCircle, ArrowLeft, ArrowRight, Lock, Shield, Clock, Loader2, Sparkles } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { encryptCredential } from "@/lib/credentials";
 
-const TEXTAREA_FIELDS = ["email_content", "input_text", "knowledge_base", "code", "transcript", "rules"];
+const TEXTAREA_FIELDS = ["email_content", "input_text", "knowledge_base", "code", "transcript", "rules", "source_urls"];
+
+const FRIENDLY_LABELS: Record<string, string> = {
+  tone: "Choose your tone",
+  response_length: "How detailed should it be?",
+  email_content: "Paste the email you want to reply to",
+  rules: "Any specific rules or instructions?",
+  topic: "What topic should it write about?",
+  word_count: "Approximate length",
+  target_audience: "Who is this for?",
+  input_text: "Paste your text or data here",
+  output_format: "What format do you want?",
+  knowledge_base: "Paste your FAQ or knowledge base content",
+  question: "What question should it answer?",
+  platforms: "Which platform(s)?",
+  num_posts: "How many posts?",
+  competitor_url: "Competitor website URL",
+  focus_areas: "What to focus on?",
+  industry: "Your industry",
+  company_size: "Target company size",
+  location: "Location or region",
+  num_leads: "How many leads to find?",
+  language: "Programming language",
+  focus: "Review focus",
+  code: "Paste your code here",
+  fields_to_extract: "What data to extract?",
+  transcript: "Paste the meeting transcript",
+  output_type: "What kind of summary?",
+  source_urls: "Source URLs to research (comma-separated)",
+  writing_focus: "What angle or points to cover?",
+  include_image: "Include a relevant image?",
+};
+
+const SCHEDULE_INTERVALS = [
+  { value: "every_3_min", label: "Every 3 minutes", hint: "For testing only" },
+  { value: "every_15_min", label: "Every 15 minutes", hint: "Best for real-time monitoring" },
+  { value: "every_hour", label: "Hourly", hint: "Good for email & social media" },
+  { value: "every_6_hours", label: "Every 6 hours", hint: "4 times per day" },
+  { value: "every_12_hours", label: "Every 12 hours", hint: "Morning & evening" },
+  { value: "daily", label: "Daily (9 AM UTC)", hint: "Most popular — once per day" },
+  { value: "weekly", label: "Weekly (Mon 9 AM UTC)", hint: "Great for reports & summaries" },
+];
 
 const DeployWizard = () => {
   const { agentId } = useParams<{ agentId: string }>();
@@ -30,6 +72,14 @@ const DeployWizard = () => {
   const [agreed, setAgreed] = useState(false);
   const [deploying, setDeploying] = useState(false);
   const [deployed, setDeployed] = useState(false);
+  const [countdown, setCountdown] = useState(5);
+
+  // Scheduling state
+  const [scheduleEnabled, setScheduleEnabled] = useState(false);
+  const [scheduleInterval, setScheduleInterval] = useState("daily");
+  const [generatingTitles, setGeneratingTitles] = useState(false);
+  const [suggestedTitles, setSuggestedTitles] = useState<string[]>([]);
+  const [selectedTitles, setSelectedTitles] = useState<Set<number>>(new Set());
 
   const { data: agent, isLoading } = useQuery({
     queryKey: ["deploy-agent", agentId],
@@ -45,6 +95,19 @@ const DeployWizard = () => {
   });
 
   useEffect(() => {
+    if (agent && Object.keys(config).length === 0) {
+      const s = agent.config_schema as { fields?: Array<{ name: string; default?: string | number }> } | null;
+      const defaults: Record<string, string> = {};
+      (s?.fields ?? []).forEach((f) => {
+        if (f.default !== undefined && f.default !== "") {
+          defaults[f.name] = String(f.default);
+        }
+      });
+      if (Object.keys(defaults).length > 0) setConfig(defaults);
+    }
+  }, [agent]);
+
+  useEffect(() => {
     if (deployed) {
       confetti({
         particleCount: 100,
@@ -54,6 +117,64 @@ const DeployWizard = () => {
       });
     }
   }, [deployed]);
+
+  useEffect(() => {
+    if (deployed) {
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            navigate("/dashboard/runs");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [deployed, navigate]);
+
+  const isBlogWriter = agent?.slug === "blog-writer";
+
+  const handleGenerateTitles = async () => {
+    setGeneratingTitles(true);
+    setSuggestedTitles([]);
+    setSelectedTitles(new Set());
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-titles", {
+        body: {
+          topic: config.topic || "",
+          source_urls: config.source_urls || "",
+          writing_focus: config.writing_focus || "",
+          target_audience: config.target_audience || "",
+          tone: config.tone || "",
+        },
+      });
+      if (error) throw error;
+      if (data?.titles?.length > 0) {
+        setSuggestedTitles(data.titles);
+      } else {
+        toast.error("No titles generated. Try adding a topic or source URLs.");
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to generate titles";
+      toast.error(message);
+    } finally {
+      setGeneratingTitles(false);
+    }
+  };
+
+  const toggleTitle = (index: number) => {
+    setSelectedTitles((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
 
   if (isLoading) {
     return (
@@ -80,7 +201,6 @@ const DeployWizard = () => {
     setDeploying(true);
 
     try {
-      // Encrypt and save credentials (upsert to avoid duplicates)
       for (const [type, value] of Object.entries(credentials)) {
         if (value) {
           const encrypted = await encryptCredential(value);
@@ -107,28 +227,55 @@ const DeployWizard = () => {
         }
       }
 
-      // Create deployment
+      // Build final config with title generation context + topic queue if scheduling
+      const finalConfig = { ...config };
+      if (isBlogWriter) {
+        (finalConfig as any).title_generation_context = {
+          topic: config.topic || "",
+          source_urls: config.source_urls || "",
+          writing_focus: config.writing_focus || "",
+          target_audience: config.target_audience || "",
+          tone: config.tone || "",
+        };
+      }
+      if (scheduleEnabled && isBlogWriter && selectedTitles.size > 0) {
+        const queue = Array.from(selectedTitles)
+          .sort((a, b) => a - b)
+          .map((i) => suggestedTitles[i]);
+        (finalConfig as any).scheduled_topic_queue = queue;
+      }
+
       const { data: deployment, error } = await supabase.from("deployments").insert({
         user_id: user.id,
         agent_id: agent.id,
-        config,
+        config: finalConfig,
         status: "active",
       }).select().single();
 
       if (error) {
-        toast.error("Failed to deploy: " + error.message);
+        toast.error("Failed to set up: " + error.message);
         setDeploying(false);
         return;
       }
 
-      // Trigger first run
+      // If scheduling enabled, set it up
+      if (scheduleEnabled) {
+        try {
+          await supabase.functions.invoke("schedule-agent", {
+            body: { deployment_id: deployment.id, action: "enable", interval: scheduleInterval },
+          });
+        } catch {
+          toast.info("Agent deployed but scheduling may need manual setup.");
+        }
+      }
+
       try {
         await supabase.functions.invoke("run-agent", {
           body: { deployment_id: deployment.id },
         });
-        toast.success("Agent deployed and first run started!");
+        toast.success("Agent is set up and running!");
       } catch {
-        toast.success("Agent deployed! First run will start shortly.");
+        toast.success("Agent is set up! First run will start shortly.");
       }
 
       setDeploying(false);
@@ -148,16 +295,16 @@ const DeployWizard = () => {
             <CheckCircle size={40} />
           </div>
           <h1 className="text-3xl font-medium font-display">Your Agent is Live and Running!</h1>
-          <p className="text-muted-foreground">{agent.name} is now deployed and running.</p>
-          <div className="flex justify-center gap-4">
+          <p className="text-muted-foreground">{agent.name} is running! Redirecting to your results in {countdown}s...</p>
+          <div className="flex flex-wrap justify-center gap-4">
             <Button variant="gradient" asChild>
               <Link to="/dashboard">Go to Dashboard</Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link to="/dashboard/runs">View Run History →</Link>
+              <Link to="/dashboard/runs">View Results →</Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link to="/marketplace">Deploy Another</Link>
+              <Link to="/marketplace">Set Up Another</Link>
             </Button>
           </div>
         </div>
@@ -165,10 +312,13 @@ const DeployWizard = () => {
     );
   }
 
+  const runsPerDay: Record<string, number> = {
+    every_hour: 24, every_6_hours: 4, every_12_hours: 2, daily: 1, weekly: 0.14,
+  };
+
   return (
     <div className="bg-background min-h-screen">
       <div className="max-w-2xl mx-auto px-4 py-8">
-        {/* Back */}
         <button
           onClick={() => navigate(-1)}
           className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-6"
@@ -176,8 +326,8 @@ const DeployWizard = () => {
           <ArrowLeft size={14} /> Back
         </button>
 
-        <h1 className="text-2xl font-medium font-display mb-2">Deploy {agent.name}</h1>
-        <p className="text-muted-foreground mb-8">{agent.base_credit_cost} credits per run</p>
+        <h1 className="text-2xl font-medium font-display mb-2">Set Up {agent.name}</h1>
+        <p className="text-muted-foreground mb-8">{agent.base_credit_cost} credits per run (~${(agent.base_credit_cost * 0.10).toFixed(2)})</p>
 
         {/* Progress */}
         <div className="flex items-center gap-2 mb-8">
@@ -191,24 +341,24 @@ const DeployWizard = () => {
                 {s}
               </div>
               <span className={`text-xs hidden sm:inline ${step >= s ? "text-foreground" : "text-muted-foreground"}`}>
-                {s === 1 ? "Configure" : s === 2 ? "Credentials" : "Review"}
+                {s === 1 ? "Preferences" : s === 2 ? "Connections" : "Review & Start"}
               </span>
               {s < 3 && <div className={`flex-1 h-px ${step > s ? "bg-primary" : "bg-border"}`} />}
             </div>
           ))}
         </div>
 
-        {/* Step 1: Configure */}
+        {/* Step 1: Preferences */}
         {step === 1 && (
           <Card>
-            <CardHeader><h2 className="font-medium text-lg">Configuration</h2></CardHeader>
+            <CardHeader><h2 className="font-medium text-lg">Set Your Preferences</h2></CardHeader>
             <CardContent className="space-y-4">
               {fields.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No configuration needed for this agent.</p>
+                <p className="text-sm text-muted-foreground">No configuration needed for this agent — it works out of the box!</p>
               ) : (
                 fields.map((field) => (
                   <div key={field.name} className="space-y-2">
-                    <Label>{field.name.replace(/_/g, " ")}</Label>
+                    <Label>{FRIENDLY_LABELS[field.name] || field.name.replace(/_/g, " ")}</Label>
                     {field.type === "select" && field.options ? (
                       <Select
                         value={config[field.name] ?? String(field.default ?? "")}
@@ -247,17 +397,23 @@ const DeployWizard = () => {
           </Card>
         )}
 
-        {/* Step 2: Credentials */}
+        {/* Step 2: Connections */}
         {step === 2 && (
           <Card>
             <CardHeader><h2 className="font-medium text-lg">Connect Credentials</h2></CardHeader>
             <CardContent className="space-y-4">
               {requiredCreds.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No credentials required for this agent.</p>
+                <div className="flex items-center gap-3 p-4 rounded-lg bg-accent/10 border border-accent/20">
+                  <CheckCircle size={20} className="text-accent shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-accent">No API keys needed!</p>
+                    <p className="text-xs text-muted-foreground">This agent works right away — just click Next.</p>
+                  </div>
+                </div>
               ) : (
                 <>
                   <div className="flex items-center gap-2 p-3 rounded-lg bg-muted text-sm">
-                    <Shield size={16} className="text-primary shrink-0" />
+                    <Shield size={16} className="text-accent shrink-0" />
                     <span className="text-muted-foreground">Your credentials are encrypted and stored securely.</span>
                   </div>
                   {requiredCreds.map((cred) => (
@@ -275,7 +431,7 @@ const DeployWizard = () => {
                         href={`https://www.google.com/search?q=how+to+get+${encodeURIComponent(cred.replace(/_/g, " "))}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs text-primary hover:underline"
+                        className="text-xs text-accent hover:underline"
                       >
                         How to get this →
                       </a>
@@ -295,10 +451,10 @@ const DeployWizard = () => {
           </Card>
         )}
 
-        {/* Step 3: Review */}
+        {/* Step 3: Review & Start */}
         {step === 3 && (
           <Card>
-            <CardHeader><h2 className="font-medium text-lg">Review & Deploy</h2></CardHeader>
+            <CardHeader><h2 className="font-medium text-lg">Review & Start</h2></CardHeader>
             <CardContent className="space-y-4">
               <div className="p-4 rounded-lg bg-muted space-y-3">
                 <div className="flex justify-between text-sm">
@@ -307,18 +463,135 @@ const DeployWizard = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Cost</span>
-                  <Badge variant="accent">{agent.base_credit_cost} credits/run</Badge>
+                  <Badge variant="accent">{agent.base_credit_cost} credits/run (~${(agent.base_credit_cost * 0.10).toFixed(2)})</Badge>
                 </div>
                 {Object.entries(config).filter(([, v]) => v).map(([k, v]) => (
                   <div key={k} className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{k.replace(/_/g, " ")}</span>
-                    <span>{v}</span>
+                    <span className="text-muted-foreground">{FRIENDLY_LABELS[k] || k.replace(/_/g, " ")}</span>
+                    <span className="max-w-[200px] truncate">{v}</span>
                   </div>
                 ))}
                 {requiredCreds.length > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Credentials</span>
-                    <span>{requiredCreds.length} configured</span>
+                    <span>{requiredCreds.length} configured ✓</span>
+                  </div>
+                )}
+                {requiredCreds.length === 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">API Keys</span>
+                    <span className="text-accent">None required ✓</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Scheduling Section */}
+              <div className="border border-border rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock size={16} className="text-muted-foreground" />
+                    <span className="text-sm font-medium">Run on a schedule</span>
+                  </div>
+                  <Switch
+                    checked={scheduleEnabled}
+                    onCheckedChange={setScheduleEnabled}
+                  />
+                </div>
+
+                {scheduleEnabled && (
+                  <div className="space-y-4 pt-2">
+                    <div className="space-y-2">
+                      <Label className="text-sm">How often?</Label>
+                      <Select value={scheduleInterval} onValueChange={setScheduleInterval}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SCHEDULE_INTERVALS.map((i) => (
+                            <SelectItem key={i.value} value={i.value}>
+                              <span>{i.label}</span>
+                              <span className="text-xs text-muted-foreground ml-2">— {i.hint}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        💡 Estimated cost: ~{Math.round((runsPerDay[scheduleInterval] ?? 1) * 30 * agent.base_credit_cost)} credits/month
+                      </p>
+                    </div>
+
+                    {/* Blog Writer: Title Generation */}
+                    {isBlogWriter && (
+                      <div className="space-y-3 border-t border-border pt-4">
+                        <div className="flex items-center justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-medium">Pre-plan your content</p>
+                            <p className="text-xs text-muted-foreground">
+                              Generate 15 article title suggestions — select which ones to queue for scheduled writing.
+                            </p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleGenerateTitles}
+                            disabled={generatingTitles}
+                          >
+                            {generatingTitles ? (
+                              <Loader2 size={14} className="mr-1 animate-spin" />
+                            ) : (
+                              <Sparkles size={14} className="mr-1" />
+                            )}
+                            {generatingTitles ? "Generating..." : suggestedTitles.length > 0 ? "Regenerate" : "Generate Titles"}
+                          </Button>
+                        </div>
+
+                        {suggestedTitles.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs text-muted-foreground">
+                                {selectedTitles.size} of {suggestedTitles.length} selected
+                              </p>
+                              <button
+                                className="text-xs text-accent hover:underline"
+                                onClick={() => {
+                                  if (selectedTitles.size === suggestedTitles.length) {
+                                    setSelectedTitles(new Set());
+                                  } else {
+                                    setSelectedTitles(new Set(suggestedTitles.map((_, i) => i)));
+                                  }
+                                }}
+                              >
+                                {selectedTitles.size === suggestedTitles.length ? "Deselect all" : "Select all"}
+                              </button>
+                            </div>
+                            <div className="max-h-[300px] overflow-y-auto space-y-1.5 pr-1">
+                              {suggestedTitles.map((title, index) => (
+                                <label
+                                  key={index}
+                                  className={`flex items-start gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors text-sm ${
+                                    selectedTitles.has(index)
+                                      ? "bg-accent/10 border border-accent/30"
+                                      : "bg-muted/50 border border-transparent hover:bg-muted"
+                                  }`}
+                                >
+                                  <Checkbox
+                                    checked={selectedTitles.has(index)}
+                                    onCheckedChange={() => toggleTitle(index)}
+                                    className="mt-0.5"
+                                  />
+                                  <span className="leading-snug">{title}</span>
+                                </label>
+                              ))}
+                            </div>
+                            {selectedTitles.size > 0 && (
+                              <p className="text-xs text-accent font-medium">
+                                ✓ {selectedTitles.size} articles queued — the agent will write one per scheduled run
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -335,7 +608,7 @@ const DeployWizard = () => {
                   <ArrowLeft size={16} className="mr-2" /> Back
                 </Button>
                 <Button variant="gradient" disabled={!agreed || deploying} onClick={handleDeploy}>
-                  {deploying ? "Deploying..." : "Deploy Agent"}
+                  {deploying ? "Starting..." : "Start Agent →"}
                 </Button>
               </div>
             </CardContent>

@@ -7,10 +7,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Clock, Coins } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Clock, Coins, Copy } from "lucide-react";
 import { differenceInSeconds, differenceInMinutes } from "date-fns";
 import ReactMarkdown from "react-markdown";
+import { toast } from "sonner";
 import type { DeploymentWithAgent } from "@/types/deployment";
 
 const ALLOWED_MARKDOWN_ELEMENTS = ["p", "h1", "h2", "h3", "h4", "strong", "em", "ul", "ol", "li", "code", "pre", "blockquote"];
@@ -18,7 +18,7 @@ const ALLOWED_MARKDOWN_ELEMENTS = ["p", "h1", "h2", "h3", "h4", "strong", "em", 
 const statusStyles: Record<string, string> = {
   success: "bg-success text-success-foreground",
   failed: "bg-destructive text-destructive-foreground",
-  running: "bg-primary text-primary-foreground",
+  running: "bg-accent text-accent-foreground",
   queued: "bg-muted text-muted-foreground",
 };
 
@@ -31,6 +31,15 @@ const RunHistory = () => {
   const [agentFilter, setAgentFilter] = useState("all");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [page, setPage] = useState(0);
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Output copied to clipboard!");
+    } catch {
+      toast.error("Failed to copy");
+    }
+  };
 
   const { data: deployments } = useQuery({
     queryKey: ["my-deployments", user?.id],
@@ -54,7 +63,6 @@ const RunHistory = () => {
     enabled: !!deployments,
   });
 
-  // Unique agents for filter
   const agentOptions = Array.from(
     new Map(
       (deployments ?? []).map((d) => [d.agent_id, d.agents?.name ?? "Unknown"])
@@ -83,7 +91,7 @@ const RunHistory = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="space-y-3">
         <div>
           <h1 className="text-2xl font-medium font-display">Run History</h1>
           {filtered.length > 0 && (
@@ -94,7 +102,7 @@ const RunHistory = () => {
         </div>
         <div className="flex gap-2 flex-wrap">
           <Select value={agentFilter} onValueChange={(v) => { setAgentFilter(v); setPage(0); }}>
-            <SelectTrigger className="w-40"><SelectValue placeholder="All Agents" /></SelectTrigger>
+            <SelectTrigger className="w-[calc(50%-4px)] sm:w-40"><SelectValue placeholder="All Agents" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Agents</SelectItem>
               {agentOptions.map(([id, name]) => (
@@ -103,7 +111,7 @@ const RunHistory = () => {
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(0); }}>
-            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[calc(50%-4px)] sm:w-40"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="queued">Queued</SelectItem>
@@ -123,62 +131,60 @@ const RunHistory = () => {
         <Card><CardContent className="p-8 text-center text-muted-foreground">No runs found.</CardContent></Card>
       ) : (
         <>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Agent</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Started</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Credits</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginated.map((run) => {
-                  const dep = (deployments ?? []).find((d) => d.id === run.deployment_id);
-                  const isExpanded = expanded === run.id;
-                  const isScheduled = run.input_summary?.startsWith("[Scheduled");
-                  return (
-                    <Fragment key={run.id}>
-                      <TableRow className="cursor-pointer" onClick={() => setExpanded(isExpanded ? null : run.id)}>
-                        <TableCell className="font-medium">
-                          <span className="flex items-center gap-1.5">
-                            {isScheduled && <Clock size={13} className="text-accent shrink-0" />}
-                            {dep?.agents?.name ?? "—"}
-                          </span>
-                        </TableCell>
-                        <TableCell><Badge className={statusStyles[run.status] ?? ""}>{run.status}</Badge></TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{run.started_at ? new Date(run.started_at).toLocaleString() : "—"}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{formatDuration(run)}</TableCell>
-                        <TableCell>{run.credits_used ?? 0}</TableCell>
-                        <TableCell>{isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</TableCell>
-                      </TableRow>
-                      {isExpanded && (
-                        <TableRow>
-                          <TableCell colSpan={6} className="bg-muted/50 p-4">
-                            <div className="space-y-2 text-sm">
-                              {run.input_summary && <p><span className="font-medium">Input:</span> {run.input_summary}</p>}
-                              {run.output_summary && (
-                                <div>
-                                  <span className="font-medium">Output:</span>
-                                  <div className="mt-1 bg-background p-3 rounded-lg border max-h-[500px] overflow-y-auto prose prose-sm max-w-none dark:prose-invert">
-                                    <ReactMarkdown allowedElements={ALLOWED_MARKDOWN_ELEMENTS}>{run.output_summary}</ReactMarkdown>
-                                  </div>
-                                </div>
-                              )}
-                              {run.error_message && <p className="text-destructive"><span className="font-medium">Error:</span> {run.error_message}</p>}
-                              {!run.input_summary && !run.output_summary && !run.error_message && <p className="text-muted-foreground">No details available.</p>}
+          <div className="space-y-2">
+            {paginated.map((run) => {
+              const dep = (deployments ?? []).find((d) => d.id === run.deployment_id);
+              const isExpanded = expanded === run.id;
+              const isScheduled = run.input_summary?.startsWith("[Scheduled");
+              return (
+                <Card key={run.id}>
+                  <CardContent
+                    className="p-4 cursor-pointer"
+                    onClick={() => setExpanded(isExpanded ? null : run.id)}
+                  >
+                    {/* Row 1: Agent name + status + expand */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {isScheduled && <Clock size={13} className="text-accent shrink-0" />}
+                        <span className="font-medium text-sm truncate">{dep?.agents?.name ?? "—"}</span>
+                        <Badge className={`shrink-0 ${statusStyles[run.status] ?? ""}`}>{run.status}</Badge>
+                      </div>
+                      {isExpanded ? <ChevronUp size={16} className="shrink-0" /> : <ChevronDown size={16} className="shrink-0" />}
+                    </div>
+                    {/* Row 2: Meta */}
+                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground flex-wrap">
+                      <span>{run.started_at ? new Date(run.started_at).toLocaleString() : "—"}</span>
+                      <span>Duration: {formatDuration(run)}</span>
+                      <span>Credits: {run.credits_used ?? 0}</span>
+                    </div>
+                    {/* Expanded details */}
+                    {isExpanded && (
+                      <div className="mt-3 pt-3 border-t border-border space-y-2 text-sm" onClick={(e) => e.stopPropagation()}>
+                        {run.input_summary && <p><span className="font-medium">Input:</span> {run.input_summary}</p>}
+                        {run.output_summary && (
+                          <div>
+                            <span className="font-medium">Output:</span>
+                            <div className="mt-1 bg-background p-3 rounded-lg border max-h-[500px] overflow-y-auto prose prose-sm max-w-none dark:prose-invert">
+                              <ReactMarkdown allowedElements={ALLOWED_MARKDOWN_ELEMENTS}>{run.output_summary}</ReactMarkdown>
                             </div>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </Fragment>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mt-2"
+                              onClick={() => copyToClipboard(run.output_summary ?? "")}
+                            >
+                              <Copy size={14} className="mr-1.5" /> Copy Output
+                            </Button>
+                          </div>
+                        )}
+                        {run.error_message && <p className="text-destructive"><span className="font-medium">Error:</span> {run.error_message}</p>}
+                        {!run.input_summary && !run.output_summary && !run.error_message && <p className="text-muted-foreground">No details available.</p>}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
           {totalPages > 1 && (
@@ -188,7 +194,7 @@ const RunHistory = () => {
               </p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(page - 1)}>
-                  <ChevronLeft size={16} className="mr-1" /> Previous
+                  <ChevronLeft size={16} className="mr-1" /> Prev
                 </Button>
                 <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)}>
                   Next <ChevronRight size={16} className="ml-1" />

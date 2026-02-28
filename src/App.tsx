@@ -24,6 +24,7 @@ import RunHistory from "./pages/dashboard/RunHistory";
 import Billing from "./pages/dashboard/Billing";
 import Credentials from "./pages/dashboard/Credentials";
 import DashboardSettings from "./pages/dashboard/DashboardSettings";
+import Analytics from "./pages/dashboard/Analytics";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,7 @@ const App = () => (
               <Route path="/dashboard" element={<Overview />} />
               <Route path="/dashboard/agents" element={<MyAgents />} />
               <Route path="/dashboard/runs" element={<RunHistory />} />
+              <Route path="/dashboard/analytics" element={<Analytics />} />
               <Route path="/dashboard/billing" element={<Billing />} />
               <Route path="/dashboard/credentials" element={<Credentials />} />
               <Route path="/dashboard/settings" element={<DashboardSettings />} />
