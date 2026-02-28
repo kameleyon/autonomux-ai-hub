@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import { SEO } from "@/components/SEO";
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -54,6 +55,11 @@ const SignUp = () => {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-background">
+      <SEO
+        title="Sign Up Free — 25 Credits Included | Autonomux"
+        description="Create your free Autonomux account. 25 credits included — no credit card required. Start automating in under 2 minutes."
+        url="https://autonomux.lovable.app/signup"
+      />
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
           <Link to="/" className="flex items-center justify-center gap-2">

@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { SEO } from "@/components/SEO";
 
 const PrivacyPolicy = () => (
   <div className="max-w-3xl mx-auto px-4 py-12">
+    <SEO title="Privacy Policy | Autonomux" url="https://autonomux.lovable.app/privacy" />
     <Link to="/" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-6">
       <ArrowLeft size={14} /> Back to Home
     </Link>

@@ -13,6 +13,7 @@ import {
 import { Star, Search, ArrowRight, Filter, X } from "lucide-react";
 import { iconMap, defaultAgentIcon } from "@/lib/icons";
 import { CATEGORY_NAMES } from "@/lib/categories";
+import { SEO } from "@/components/SEO";
 
 const Marketplace = () => {
   const [searchParams] = useSearchParams();
@@ -126,8 +127,12 @@ const Marketplace = () => {
 
   return (
     <div className="bg-background min-h-screen">
+      <SEO
+        title="AI Agent Marketplace — Browse 10+ Ready-Made AI Workers | Autonomux"
+        description="Browse AI agents for email, content, leads, support, social media, development and more. Deploy in seconds, no code required."
+        url="https://autonomux.lovable.app/marketplace"
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-medium font-display mb-2">Agent Marketplace</h1>
           <p className="text-muted-foreground">Pick an AI agent, set it up in clicks, and get results in seconds</p>
