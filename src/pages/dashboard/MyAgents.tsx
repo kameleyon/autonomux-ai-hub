@@ -12,11 +12,13 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Pause, Play, Trash2, Zap, Loader2, Clock, Timer } from "lucide-react";
+import { Pause, Play, Trash2, Zap, Loader2, Clock, Timer, Settings, Sparkles } from "lucide-react";
 import { formatDistanceToNow, differenceInMinutes, differenceInHours, isPast } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
 import type { DeploymentWithAgent } from "@/types/deployment";
 import { ScheduleDialog } from "@/components/ScheduleDialog";
+import { EditConfigDialog } from "@/components/EditConfigDialog";
+import { GenerateTitlesDialog } from "@/components/GenerateTitlesDialog";
 
 type DeploymentStatus = Database["public"]["Enums"]["deployment_status"];
 
@@ -54,6 +56,8 @@ const MyAgents = () => {
   useRealtimeDeployments(user?.id);
   const [runningId, setRunningId] = useState<string | null>(null);
   const [scheduleDeployment, setScheduleDeployment] = useState<DeploymentWithAgent | null>(null);
+  const [editConfigDeployment, setEditConfigDeployment] = useState<DeploymentWithAgent | null>(null);
+  const [titlesDeployment, setTitlesDeployment] = useState<DeploymentWithAgent | null>(null);
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -144,6 +148,22 @@ const MyAgents = () => {
         ) : (
           <Zap size={16} className="text-accent" />
         )}
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setEditConfigDeployment(dep)}
+        title="Edit instructions"
+      >
+        <Settings size={16} />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setTitlesDeployment(dep)}
+        title="Generate more titles"
+      >
+        <Sparkles size={16} />
       </Button>
       <Button
         variant="ghost"
@@ -261,6 +281,22 @@ const MyAgents = () => {
           scheduleEnabled={scheduleDeployment.schedule_enabled ?? false}
           nextRunAt={scheduleDeployment.next_run_at}
           creditCost={scheduleDeployment.agents?.base_credit_cost ?? 1}
+        />
+      )}
+
+      {editConfigDeployment && (
+        <EditConfigDialog
+          open={!!editConfigDeployment}
+          onOpenChange={(open) => !open && setEditConfigDeployment(null)}
+          deployment={editConfigDeployment}
+        />
+      )}
+
+      {titlesDeployment && (
+        <GenerateTitlesDialog
+          open={!!titlesDeployment}
+          onOpenChange={(open) => !open && setTitlesDeployment(null)}
+          deployment={titlesDeployment}
         />
       )}
     </div>
