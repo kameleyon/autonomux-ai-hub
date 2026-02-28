@@ -198,7 +198,7 @@ const AgentDetail = () => {
                     <h3 className="font-medium mb-1">What You'll Set Up</h3>
                     <p className="text-sm text-muted-foreground mb-4">When you set up this agent, you'll configure these simple options:</p>
                     {(() => {
-                      const schema = agent.config_schema as { fields?: Array<{ name: string; type: string; options?: string[]; default?: string }> } | null;
+                      const schema = agent.config_schema as { fields?: Array<{ name: string; type: string; options?: string[]; default?: string; label?: string; placeholder?: string }> } | null;
                       const fields = schema?.fields ?? [];
                       if (fields.length === 0) return <p className="text-sm text-muted-foreground">No configuration needed — this agent works out of the box!</p>;
                       return (
