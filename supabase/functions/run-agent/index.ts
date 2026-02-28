@@ -697,6 +697,8 @@ Deno.serve(async (req) => {
       const escHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
       const inlineFormat = (s: string): string => {
         return s
+          .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="width:100%;max-width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;border-radius:8px;margin:12px 0;display:block;" />')
+          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color:#F7941D;text-decoration:none;">$1</a>')
           .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
           .replace(/\*(.+?)\*/g, "<em>$1</em>")
           .replace(/`(.+?)`/g, '<code style="background:#E5E7EB;padding:2px 5px;border-radius:4px;font-size:13px;font-family:monospace;">$1</code>');
@@ -714,6 +716,13 @@ Deno.serve(async (req) => {
           if (line.startsWith("### ")) { blocks.push(`<h3 style="font-size:16px;font-weight:600;margin:20px 0 8px;color:#1F2937;">${inlineFormat(escHtml(line.slice(4)))}</h3>`); i++; continue; }
           if (line.startsWith("## ")) { blocks.push(`<h2 style="font-size:18px;font-weight:600;margin:22px 0 8px;color:#1F2937;">${inlineFormat(escHtml(line.slice(3)))}</h2>`); i++; continue; }
           if (line.startsWith("# ")) { blocks.push(`<h1 style="font-size:22px;font-weight:600;margin:24px 0 10px;color:#111827;">${inlineFormat(escHtml(line.slice(2)))}</h1>`); i++; continue; }
+
+          // Image (block-level)
+          const imgMatch = line.trim().match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+          if (imgMatch) {
+            blocks.push(`<img src="${imgMatch[2]}" alt="${escHtml(imgMatch[1])}" style="width:100%;max-width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;border-radius:8px;margin:16px 0;display:block;" />`);
+            i++; continue;
+          }
 
           // Horizontal rule
           if (/^[-*_]{3,}\s*$/.test(line.trim())) { blocks.push('<hr style="border:none;border-top:1px solid #E5E7EB;margin:20px 0;" />'); i++; continue; }
