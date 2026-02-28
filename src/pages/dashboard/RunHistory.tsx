@@ -13,7 +13,7 @@ import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import type { DeploymentWithAgent } from "@/types/deployment";
 
-const ALLOWED_MARKDOWN_ELEMENTS = ["p", "h1", "h2", "h3", "h4", "strong", "em", "ul", "ol", "li", "code", "pre", "blockquote"];
+const ALLOWED_MARKDOWN_ELEMENTS = ["p", "h1", "h2", "h3", "h4", "strong", "em", "ul", "ol", "li", "code", "pre", "blockquote", "img", "a"];
 
 const statusStyles: Record<string, string> = {
   success: "bg-success text-success-foreground",
@@ -164,8 +164,17 @@ const RunHistory = () => {
                         {run.output_summary && (
                           <div>
                             <span className="font-medium">Output:</span>
-                            <div className="mt-1 bg-background p-3 rounded-lg border max-h-[500px] overflow-y-auto prose prose-sm max-w-none dark:prose-invert">
-                              <ReactMarkdown allowedElements={ALLOWED_MARKDOWN_ELEMENTS}>{run.output_summary}</ReactMarkdown>
+                            <div className="mt-1 bg-background p-3 rounded-lg border max-h-[500px] overflow-y-auto prose prose-sm max-w-none dark:prose-invert [&_img]:w-full [&_img]:aspect-video [&_img]:object-cover [&_img]:rounded-lg [&_img]:my-4">
+                              <ReactMarkdown
+                                allowedElements={ALLOWED_MARKDOWN_ELEMENTS}
+                                components={{
+                                  img: ({ node, ...props }) => (
+                                    <img {...props} loading="lazy" className="w-full aspect-video object-cover rounded-lg my-4" />
+                                  ),
+                                }}
+                              >
+                                {run.output_summary}
+                              </ReactMarkdown>
                             </div>
                             <Button
                               variant="outline"
