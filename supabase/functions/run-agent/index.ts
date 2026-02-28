@@ -589,7 +589,10 @@ Deno.serve(async (req) => {
     const { system, user: userMsg } = await getPrompt(agent.category, agent.slug, runConfig, previousTopics);
 
     // Call OpenRouter with model fallback
-    const MODELS = ["anthropic/claude-sonnet-4", "openai/gpt-4o-mini"];
+    // Blog writer uses Gemini for higher-quality long-form content
+    const MODELS = agent.slug === "blog-writer"
+      ? ["google/gemini-2.5-pro-preview", "anthropic/claude-sonnet-4", "openai/gpt-4o-mini"]
+      : ["anthropic/claude-sonnet-4", "openai/gpt-4o-mini"];
     let llmData: any = null;
     let llmError: string | null = null;
     let modelUsed = MODELS[0];
