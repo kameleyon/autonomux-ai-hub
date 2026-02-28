@@ -132,24 +132,17 @@ export function GenerateTitlesDialog({ open, onOpenChange, deployment }: Generat
         </DialogHeader>
 
         <div className="space-y-4 py-2 overflow-y-auto min-h-0 flex-1">
-          <div className="rounded-lg bg-muted/50 p-3 space-y-1 text-xs">
-            <p className="font-medium text-muted-foreground mb-1">Using this context:</p>
-            {effectiveTopic && (
-              <p><span className="text-muted-foreground">Topic:</span> <span className="text-foreground break-words">{effectiveTopic}</span></p>
-            )}
-            {effectiveWritingFocus && (
-              <p><span className="text-muted-foreground">Writing Focus:</span> <span className="text-foreground break-words">{effectiveWritingFocus}</span></p>
-            )}
-            {effectiveSourceUrls && (
-              <p><span className="text-muted-foreground">Sources:</span> <span className="text-foreground break-all">{effectiveSourceUrls}</span></p>
-            )}
-            {effectiveTone && (
-              <p><span className="text-muted-foreground">Tone:</span> <span className="text-foreground">{effectiveTone}</span></p>
-            )}
-            {(pastTitles?.length ?? 0) > 0 && (
-              <p className="text-muted-foreground mt-1">🔄 Excluding {pastTitles!.length} past + {existingQueue.length} queued titles</p>
-            )}
-          </div>
+          {existingQueue.length > 0 && (
+            <div className="rounded-lg bg-muted/50 p-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-accent">{existingQueue.length}</span>
+                <span className="text-sm text-muted-foreground">title{existingQueue.length !== 1 ? "s" : ""} in queue</span>
+              </div>
+              {(pastTitles?.length ?? 0) > 0 && (
+                <span className="text-xs text-muted-foreground">🔄 {pastTitles!.length} past excluded</span>
+              )}
+            </div>
+          )}
 
           <Button
             variant="outline"
