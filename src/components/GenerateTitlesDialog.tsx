@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -26,11 +26,35 @@ export function GenerateTitlesDialog({ open, onOpenChange, deployment }: Generat
   const config = (deployment.config ?? {}) as Record<string, any>;
   const existingQueue: string[] = config.scheduled_topic_queue ?? [];
 
+  // Fetch past run output summaries to extract already-written titles
+  const { data: pastTitles } = useQuery({
+    queryKey: ["past-titles", deployment.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("runs")
+        .select("input_summary")
+        .eq("deployment_id", deployment.id)
+        .eq("status", "success")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      return (data ?? [])
+        .map((r) => r.input_summary)
+        .filter(Boolean) as string[];
+    },
+    enabled: open,
+  });
+
   const handleGenerate = async () => {
     setGenerating(true);
     setTitles([]);
     setSelected(new Set());
     try {
+      // Combine queued + already written titles for dedup
+      const allExisting = [
+        ...existingQueue,
+        ...(pastTitles ?? []),
+      ];
+
       const { data, error } = await supabase.functions.invoke("generate-titles", {
         body: {
           topic: config.topic || "",
@@ -38,6 +62,7 @@ export function GenerateTitlesDialog({ open, onOpenChange, deployment }: Generat
           writing_focus: config.writing_focus || "",
           target_audience: config.target_audience || "",
           tone: config.tone || "",
+          existing_titles: allExisting,
         },
       });
       if (error) throw error;
@@ -81,14 +106,14 @@ export function GenerateTitlesDialog({ open, onOpenChange, deployment }: Generat
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Sparkles size={18} />
             Generate More Titles
           </DialogTitle>
           <DialogDescription>
-            Generate AI title suggestions and add them to your scheduled topic queue.
+            Generate AI title suggestions based on your agent's config and add them to the queue.
             {existingQueue.length > 0 && (
               <span className="block mt-1 text-accent font-medium">
                 📋 {existingQueue.length} title{existingQueue.length !== 1 ? "s" : ""} currently in queue
@@ -97,7 +122,27 @@ export function GenerateTitlesDialog({ open, onOpenChange, deployment }: Generat
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 py-2 overflow-y-auto min-h-0 flex-1">
+          {/* Config context summary */}
+          <div className="rounded-lg bg-muted/50 p-3 space-y-1 text-xs">
+            <p className="font-medium text-muted-foreground mb-1">Generating based on:</p>
+            {config.topic && (
+              <p><span className="text-muted-foreground">Topic:</span> <span className="text-foreground">{config.topic}</span></p>
+            )}
+            {config.writing_focus && (
+              <p><span className="text-muted-foreground">Focus:</span> <span className="text-foreground break-words">{config.writing_focus}</span></p>
+            )}
+            {config.source_urls && (
+              <p><span className="text-muted-foreground">Sources:</span> <span className="text-foreground break-all">{config.source_urls}</span></p>
+            )}
+            {config.tone && (
+              <p><span className="text-muted-foreground">Tone:</span> <span className="text-foreground">{config.tone}</span></p>
+            )}
+            {(pastTitles?.length ?? 0) > 0 && (
+              <p className="text-muted-foreground mt-1">🔄 Excluding {pastTitles!.length} past + {existingQueue.length} queued titles from suggestions</p>
+            )}
+          </div>
+
           <Button
             variant="outline"
             className="w-full"
@@ -126,7 +171,7 @@ export function GenerateTitlesDialog({ open, onOpenChange, deployment }: Generat
                   {selected.size === titles.length ? "Deselect all" : "Select all"}
                 </button>
               </div>
-              <div className="max-h-[300px] overflow-y-auto space-y-1.5 pr-1">
+              <div className="max-h-[250px] overflow-y-auto space-y-1.5 pr-1">
                 {titles.map((title, i) => (
                   <label
                     key={i}
@@ -136,8 +181,8 @@ export function GenerateTitlesDialog({ open, onOpenChange, deployment }: Generat
                         : "bg-muted/50 border border-transparent hover:bg-muted"
                     }`}
                   >
-                    <Checkbox checked={selected.has(i)} onCheckedChange={() => toggleTitle(i)} className="mt-0.5" />
-                    <span className="leading-snug">{title}</span>
+                    <Checkbox checked={selected.has(i)} onCheckedChange={() => toggleTitle(i)} className="mt-0.5 shrink-0" />
+                    <span className="leading-snug break-words min-w-0">{title}</span>
                   </label>
                 ))}
               </div>
@@ -165,9 +210,9 @@ export function GenerateTitlesDialog({ open, onOpenChange, deployment }: Generat
               <p className="text-xs font-medium text-muted-foreground">Current Queue ({existingQueue.length})</p>
               <div className="max-h-[150px] overflow-y-auto space-y-1">
                 {existingQueue.map((t, i) => (
-                  <div key={i} className="text-xs p-2 bg-muted/50 rounded flex items-center gap-2">
+                  <div key={i} className="text-xs p-2 bg-muted/50 rounded flex items-start gap-2 min-w-0">
                     <span className="text-muted-foreground shrink-0">{i + 1}.</span>
-                    <span className="truncate">{t}</span>
+                    <span className="break-words min-w-0">{t}</span>
                   </div>
                 ))}
               </div>
