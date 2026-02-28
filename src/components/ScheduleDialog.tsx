@@ -21,6 +21,7 @@ import { Clock, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 const INTERVALS = [
+  { value: "every_3_min", label: "Every 3 minutes", hint: "For testing only" },
   { value: "every_15_min", label: "Every 15 minutes", hint: "Best for real-time monitoring" },
   { value: "every_hour", label: "Hourly", hint: "Good for email & social media" },
   { value: "every_6_hours", label: "Every 6 hours", hint: "4 times per day" },
@@ -75,7 +76,7 @@ export function ScheduleDialog({
   });
 
   const runsPerDay: Record<string, number> = {
-    every_15_min: 96, every_hour: 24, every_6_hours: 4,
+    every_3_min: 480, every_15_min: 96, every_hour: 24, every_6_hours: 4,
     every_12_hours: 2, daily: 1, weekly: 0.14,
   };
 
