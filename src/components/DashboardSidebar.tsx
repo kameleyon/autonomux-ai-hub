@@ -50,7 +50,7 @@ const DashboardSidebar = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const realtimeStatus = useRealtimeStatus();
-  const { state } = useSidebar();
+  const { state, setOpenMobile, isMobile } = useSidebar();
   const collapsed = state === "collapsed";
 
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
@@ -82,6 +82,7 @@ const DashboardSidebar = () => {
                       end={link.href === "/dashboard"}
                       className="hover:bg-sidebar-accent"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      onClick={() => { if (isMobile) setOpenMobile(false); }}
                     >
                       <link.icon className="shrink-0" />
                       <span>{link.label}</span>
