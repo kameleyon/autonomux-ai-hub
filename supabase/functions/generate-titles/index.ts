@@ -12,6 +12,7 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Auth check
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -37,10 +38,12 @@ Deno.serve(async (req) => {
 
     const { topic, source_urls, writing_focus, target_audience, tone, existing_titles } = await req.json();
 
-    // Build context from sources if provided
+    // Build context from sources (supports both URL lists and raw text datasets)
     let sourceContext = "";
-    if (source_urls) {
-      const urls = source_urls.split(",").map((u: string) => u.trim()).filter(Boolean).slice(0, 3);
+    const sourceInput = typeof source_urls === "string" ? source_urls.trim() : "";
+    const urls = sourceInput.match(/https?:\/\/[^\s,]+/g)?.slice(0, 3) ?? [];
+
+    if (urls.length > 0) {
       for (const url of urls) {
         try {
           const res = await fetch(url, {
@@ -62,6 +65,8 @@ Deno.serve(async (req) => {
           // skip
         }
       }
+    } else if (sourceInput) {
+      sourceContext = `\nProvided source context:\n${sourceInput.substring(0, 3500)}`;
     }
 
     const lovableKey = Deno.env.get("LOVABLE_API_KEY");
@@ -72,16 +77,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Build the existing titles exclusion list
-    const existingList = (existing_titles ?? []) as string[];
+    const existingList = Array.isArray(existing_titles) ? existing_titles : [];
     const exclusionBlock = existingList.length > 0
-      ? `\n\nIMPORTANT - The following titles have ALREADY been written or are queued. Do NOT suggest similar or identical titles. Avoid overlapping themes, angles, or sub-topics:\n${existingList.map((t: string, i: number) => `- ${t}`).join("\n")}\n\nGenerate titles that explore COMPLETELY DIFFERENT angles, sub-topics, or perspectives not covered above.`
+      ? `\n\nIMPORTANT - The following titles have ALREADY been written or are queued. Do NOT suggest similar or identical titles. Avoid overlapping themes, angles, or sub-topics:\n${existingList.map((t: string) => `- ${t}`).join("\n")}\n\nGenerate titles that explore COMPLETELY DIFFERENT angles, sub-topics, or perspectives not covered above.`
       : "";
 
-    const prompt = `Generate exactly 15 unique, compelling blog article titles based on the following inputs.
+    const prompt = `Generate exactly 15 unique, compelling blog article titles based on these inputs.
 
 ${topic ? `Topic/Keyword: ${topic}` : ""}
-${writing_focus ? `Writing Focus/Angle: ${writing_focus}` : ""}
+${writing_focus ? `Writing Focus/Angle (PRIMARY): ${writing_focus}` : ""}
 ${target_audience ? `Target Audience: ${target_audience}` : ""}
 ${tone ? `Tone: ${tone}` : ""}
 ${sourceContext ? `\nSource material for context:\n${sourceContext}` : ""}
@@ -89,7 +93,8 @@ ${exclusionBlock}
 
 Requirements:
 - Each title should cover a DIFFERENT angle or sub-topic
-- Titles MUST be directly relevant to the topic/keyword and writing focus above
+- Titles MUST be directly relevant to the intended subject from Writing Focus + Topic + Sources
+- If Writing Focus conflicts with Topic, PRIORITIZE Writing Focus
 - Titles should be SEO-friendly (50-70 characters ideal)
 - Vary the format: how-to, listicle, question, guide, opinion, case study, etc.
 - Make them compelling and click-worthy
@@ -106,7 +111,10 @@ Return ONLY the numbered list of 15 titles, nothing else.`;
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: "You are a content strategist who generates compelling blog article titles. You MUST stay on-topic with the provided keywords and focus areas. Never generate generic or off-topic titles." },
+          {
+            role: "system",
+            content: "You are a content strategist who generates compelling blog article titles. Stay strictly on the requested subject and reject off-topic themes.",
+          },
           { role: "user", content: prompt },
         ],
         max_tokens: 1500,
@@ -116,25 +124,27 @@ Return ONLY the numbered list of 15 titles, nothing else.`;
     if (!llmRes.ok) {
       if (llmRes.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded, please try again shortly." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (llmRes.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add funds." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        return new Response(JSON.stringify({ error: "Payment required: AI usage credits exhausted." }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const t = await llmRes.text();
-      console.error("AI gateway error:", llmRes.status, t);
+      const gatewayText = await llmRes.text();
+      console.error("AI gateway error", llmRes.status, gatewayText);
       return new Response(JSON.stringify({ error: "AI generation failed" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const llmData = await llmRes.json();
     const content = llmData.choices?.[0]?.message?.content ?? "";
 
-    // Parse numbered titles
     const titles = content
       .split("\n")
       .map((line: string) => line.replace(/^\d+[\.\)]\s*/, "").trim())

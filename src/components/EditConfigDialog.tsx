@@ -81,7 +81,7 @@ export function EditConfigDialog({ open, onOpenChange, deployment }: EditConfigD
       });
       // Also include fields from currentConfig not in schema
       Object.keys(currentConfig).forEach((k) => {
-        if (k !== "scheduled_topic_queue" && !(k in initial)) {
+        if (k !== "scheduled_topic_queue" && k !== "title_generation_context" && !(k in initial)) {
           initial[k] = String(currentConfig[k] ?? "");
         }
       });
@@ -96,6 +96,16 @@ export function EditConfigDialog({ open, onOpenChange, deployment }: EditConfigD
         if (v) updatedConfig[k] = v;
         else delete updatedConfig[k];
       });
+
+      // Keep title generation context in sync with latest instructions
+      updatedConfig.title_generation_context = {
+        topic: updatedConfig.topic || "",
+        source_urls: updatedConfig.source_urls || "",
+        writing_focus: updatedConfig.writing_focus || "",
+        target_audience: updatedConfig.target_audience || "",
+        tone: updatedConfig.tone || "",
+      };
+
       const { error } = await supabase
         .from("deployments")
         .update({ config: updatedConfig as unknown as Json })
@@ -155,7 +165,6 @@ export function EditConfigDialog({ open, onOpenChange, deployment }: EditConfigD
               )}
             </div>
           )) : (
-            // Fallback: show raw config keys
             Object.entries(config).map(([k, v]) => (
               <div key={k} className="space-y-2">
                 <Label>{FRIENDLY_LABELS[k] || k.replace(/_/g, " ")}</Label>
