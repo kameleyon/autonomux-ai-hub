@@ -12,7 +12,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Auth check
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -36,7 +35,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { topic, source_urls, writing_focus, target_audience, tone } = await req.json();
+    const { topic, source_urls, writing_focus, target_audience, tone, existing_titles } = await req.json();
 
     // Build context from sources if provided
     let sourceContext = "";
@@ -73,6 +72,12 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Build the existing titles exclusion list
+    const existingList = (existing_titles ?? []) as string[];
+    const exclusionBlock = existingList.length > 0
+      ? `\n\nIMPORTANT - The following titles have ALREADY been written or are queued. Do NOT suggest similar or identical titles. Avoid overlapping themes, angles, or sub-topics:\n${existingList.map((t: string, i: number) => `- ${t}`).join("\n")}\n\nGenerate titles that explore COMPLETELY DIFFERENT angles, sub-topics, or perspectives not covered above.`
+      : "";
+
     const prompt = `Generate exactly 15 unique, compelling blog article titles based on the following inputs.
 
 ${topic ? `Topic/Keyword: ${topic}` : ""}
@@ -80,9 +85,11 @@ ${writing_focus ? `Writing Focus/Angle: ${writing_focus}` : ""}
 ${target_audience ? `Target Audience: ${target_audience}` : ""}
 ${tone ? `Tone: ${tone}` : ""}
 ${sourceContext ? `\nSource material for context:\n${sourceContext}` : ""}
+${exclusionBlock}
 
 Requirements:
 - Each title should cover a DIFFERENT angle or sub-topic
+- Titles MUST be directly relevant to the topic/keyword and writing focus above
 - Titles should be SEO-friendly (50-70 characters ideal)
 - Vary the format: how-to, listicle, question, guide, opinion, case study, etc.
 - Make them compelling and click-worthy
@@ -99,12 +106,30 @@ Return ONLY the numbered list of 15 titles, nothing else.`;
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: "You are a content strategist who generates compelling blog article titles." },
+          { role: "system", content: "You are a content strategist who generates compelling blog article titles. You MUST stay on-topic with the provided keywords and focus areas. Never generate generic or off-topic titles." },
           { role: "user", content: prompt },
         ],
         max_tokens: 1500,
       }),
     });
+
+    if (!llmRes.ok) {
+      if (llmRes.status === 429) {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded, please try again shortly." }), {
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (llmRes.status === 402) {
+        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add funds." }), {
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const t = await llmRes.text();
+      console.error("AI gateway error:", llmRes.status, t);
+      return new Response(JSON.stringify({ error: "AI generation failed" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const llmData = await llmRes.json();
     const content = llmData.choices?.[0]?.message?.content ?? "";
