@@ -538,6 +538,7 @@ Deno.serve(async (req) => {
 
     // Build prompt (now async for web search)
     const config = (deployment.config as Record<string, any>) ?? {};
+    const runConfig = { ...config };
 
     // For blog-writer: fetch previous output titles to avoid repetition
     let previousTopics: string[] = [];
@@ -546,8 +547,9 @@ Deno.serve(async (req) => {
       const topicQueue: string[] = config.scheduled_topic_queue ?? [];
       if (topicQueue.length > 0) {
         const nextTopic = topicQueue.shift()!;
-        config.topic = nextTopic;
-        // Update deployment config with the remaining queue
+        runConfig.topic = nextTopic;
+
+        // Update deployment config with remaining queue only (keep original context fields intact)
         await adminClient
           .from("deployments")
           .update({ config: { ...config, scheduled_topic_queue: topicQueue } })
@@ -572,7 +574,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { system, user: userMsg } = await getPrompt(agent.category, agent.slug, config, previousTopics);
+    const { system, user: userMsg } = await getPrompt(agent.category, agent.slug, runConfig, previousTopics);
 
     // Call OpenRouter with model fallback
     const MODELS = ["anthropic/claude-sonnet-4", "openai/gpt-4o-mini"];

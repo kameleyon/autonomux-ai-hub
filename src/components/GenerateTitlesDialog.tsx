@@ -17,6 +17,13 @@ interface GenerateTitlesDialogProps {
   deployment: DeploymentWithAgent;
 }
 
+const extractHeading = (markdown?: string | null) => {
+  if (!markdown) return null;
+  const headingMatch = markdown.match(/^#{1,2}\s+(.+)$/m);
+  if (headingMatch?.[1]) return headingMatch[1].trim();
+  return markdown.substring(0, 120).trim();
+};
+
 export function GenerateTitlesDialog({ open, onOpenChange, deployment }: GenerateTitlesDialogProps) {
   const qc = useQueryClient();
   const [generating, setGenerating] = useState(false);
@@ -24,21 +31,27 @@ export function GenerateTitlesDialog({ open, onOpenChange, deployment }: Generat
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
   const config = (deployment.config ?? {}) as Record<string, any>;
+  const context = (config.title_generation_context ?? {}) as Record<string, string>;
   const existingQueue: string[] = config.scheduled_topic_queue ?? [];
 
-  // Fetch past run output summaries to extract already-written titles
+  const effectiveTopic = (context.topic || config.topic || "") as string;
+  const effectiveWritingFocus = (config.writing_focus || context.writing_focus || "") as string;
+  const effectiveSourceUrls = (context.source_urls || config.source_urls || "") as string;
+  const effectiveTargetAudience = (config.target_audience || context.target_audience || "") as string;
+  const effectiveTone = (config.tone || context.tone || "") as string;
+
   const { data: pastTitles } = useQuery({
     queryKey: ["past-titles", deployment.id],
     queryFn: async () => {
       const { data } = await supabase
         .from("runs")
-        .select("input_summary")
+        .select("output_summary")
         .eq("deployment_id", deployment.id)
         .eq("status", "success")
         .order("created_at", { ascending: false })
         .limit(50);
       return (data ?? [])
-        .map((r) => r.input_summary)
+        .map((r) => extractHeading(r.output_summary))
         .filter(Boolean) as string[];
     },
     enabled: open,
@@ -49,19 +62,15 @@ export function GenerateTitlesDialog({ open, onOpenChange, deployment }: Generat
     setTitles([]);
     setSelected(new Set());
     try {
-      // Combine queued + already written titles for dedup
-      const allExisting = [
-        ...existingQueue,
-        ...(pastTitles ?? []),
-      ];
+      const allExisting = [...existingQueue, ...(pastTitles ?? [])];
 
       const { data, error } = await supabase.functions.invoke("generate-titles", {
         body: {
-          topic: config.topic || "",
-          source_urls: config.source_urls || "",
-          writing_focus: config.writing_focus || "",
-          target_audience: config.target_audience || "",
-          tone: config.tone || "",
+          topic: effectiveTopic,
+          source_urls: effectiveSourceUrls,
+          writing_focus: effectiveWritingFocus,
+          target_audience: effectiveTargetAudience,
+          tone: effectiveTone,
           existing_titles: allExisting,
         },
       });
@@ -69,7 +78,7 @@ export function GenerateTitlesDialog({ open, onOpenChange, deployment }: Generat
       if (data?.titles?.length > 0) {
         setTitles(data.titles);
       } else {
-        toast.error("No titles generated. Try updating your topic or sources first.");
+        toast.error("No titles generated. Try updating topic, focus, or sources first.");
       }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to generate titles");
@@ -113,7 +122,7 @@ export function GenerateTitlesDialog({ open, onOpenChange, deployment }: Generat
             Generate More Titles
           </DialogTitle>
           <DialogDescription>
-            Generate AI title suggestions based on your agent's config and add them to the queue.
+            Generates titles from your saved instructions and excludes already-used themes.
             {existingQueue.length > 0 && (
               <span className="block mt-1 text-accent font-medium">
                 📋 {existingQueue.length} title{existingQueue.length !== 1 ? "s" : ""} currently in queue
@@ -123,23 +132,22 @@ export function GenerateTitlesDialog({ open, onOpenChange, deployment }: Generat
         </DialogHeader>
 
         <div className="space-y-4 py-2 overflow-y-auto min-h-0 flex-1">
-          {/* Config context summary */}
           <div className="rounded-lg bg-muted/50 p-3 space-y-1 text-xs">
-            <p className="font-medium text-muted-foreground mb-1">Generating based on:</p>
-            {config.topic && (
-              <p><span className="text-muted-foreground">Topic:</span> <span className="text-foreground">{config.topic}</span></p>
+            <p className="font-medium text-muted-foreground mb-1">Using this context:</p>
+            {effectiveTopic && (
+              <p><span className="text-muted-foreground">Topic:</span> <span className="text-foreground break-words">{effectiveTopic}</span></p>
             )}
-            {config.writing_focus && (
-              <p><span className="text-muted-foreground">Focus:</span> <span className="text-foreground break-words">{config.writing_focus}</span></p>
+            {effectiveWritingFocus && (
+              <p><span className="text-muted-foreground">Writing Focus:</span> <span className="text-foreground break-words">{effectiveWritingFocus}</span></p>
             )}
-            {config.source_urls && (
-              <p><span className="text-muted-foreground">Sources:</span> <span className="text-foreground break-all">{config.source_urls}</span></p>
+            {effectiveSourceUrls && (
+              <p><span className="text-muted-foreground">Sources:</span> <span className="text-foreground break-all">{effectiveSourceUrls}</span></p>
             )}
-            {config.tone && (
-              <p><span className="text-muted-foreground">Tone:</span> <span className="text-foreground">{config.tone}</span></p>
+            {effectiveTone && (
+              <p><span className="text-muted-foreground">Tone:</span> <span className="text-foreground">{effectiveTone}</span></p>
             )}
             {(pastTitles?.length ?? 0) > 0 && (
-              <p className="text-muted-foreground mt-1">🔄 Excluding {pastTitles!.length} past + {existingQueue.length} queued titles from suggestions</p>
+              <p className="text-muted-foreground mt-1">🔄 Excluding {pastTitles!.length} past + {existingQueue.length} queued titles</p>
             )}
           </div>
 

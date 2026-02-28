@@ -227,8 +227,17 @@ const DeployWizard = () => {
         }
       }
 
-      // Build final config with topic queue if scheduling
+      // Build final config with title generation context + topic queue if scheduling
       const finalConfig = { ...config };
+      if (isBlogWriter) {
+        (finalConfig as any).title_generation_context = {
+          topic: config.topic || "",
+          source_urls: config.source_urls || "",
+          writing_focus: config.writing_focus || "",
+          target_audience: config.target_audience || "",
+          tone: config.tone || "",
+        };
+      }
       if (scheduleEnabled && isBlogWriter && selectedTitles.size > 0) {
         const queue = Array.from(selectedTitles)
           .sort((a, b) => a - b)
