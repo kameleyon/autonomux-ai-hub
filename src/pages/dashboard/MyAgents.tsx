@@ -7,7 +7,6 @@ import { useRealtimeDeployments } from "@/hooks/useRealtimeDeployments";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -131,6 +130,66 @@ const MyAgents = () => {
     }
   };
 
+  const ActionButtons = ({ dep }: { dep: DeploymentWithAgent }) => (
+    <div className="flex items-center gap-1">
+      <Button
+        variant="ghost"
+        size="icon"
+        disabled={dep.status !== "active" || runningId === dep.id}
+        onClick={() => handleRun(dep.id, dep.agents?.base_credit_cost ?? 1)}
+        title="Run agent"
+      >
+        {runningId === dep.id ? (
+          <Loader2 size={16} className="animate-spin" />
+        ) : (
+          <Zap size={16} className="text-accent" />
+        )}
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setScheduleDeployment(dep)}
+        title="Schedule"
+        disabled={dep.status !== "active"}
+      >
+        <Clock size={16} />
+      </Button>
+      <Button
+        variant="ghost" size="icon"
+        onClick={() => updateStatus.mutate({
+          id: dep.id,
+          status: dep.status === "active" ? "paused" : "active",
+        })}
+      >
+        {dep.status === "active" ? <Pause size={16} /> : <Play size={16} />}
+      </Button>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <Trash2 size={16} className="text-destructive" />
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Deployment</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this agent deployment and all its run history. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteDep.mutate(dep.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+
   return (
     <div className="space-y-6 animate-fade-in">
       <h1 className="text-2xl font-medium font-display">My Agents</h1>
@@ -142,117 +201,54 @@ const MyAgents = () => {
       ) : (deployments ?? []).length === 0 ? (
         <Card><CardContent className="p-8 text-center text-muted-foreground">No deployed agents yet.</CardContent></Card>
       ) : (
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Agent</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Schedule</TableHead>
-                <TableHead>Next Run</TableHead>
-                <TableHead>Last Run</TableHead>
-                <TableHead>Credits/Run</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(deployments ?? []).map((dep) => {
-                const countdown = dep.schedule_enabled ? formatCountdown(dep.next_run_at) : null;
-                const intervalInfo = dep.schedule_interval ? INTERVAL_LABELS[dep.schedule_interval] ?? null : null;
-                return (
-                  <TableRow key={dep.id}>
-                    <TableCell className="font-medium">{dep.agents?.name ?? "—"}</TableCell>
-                    <TableCell>
-                      <Badge className={statusStyles[dep.status] ?? ""}>{dep.status}</Badge>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {dep.schedule_enabled && intervalInfo ? (
-                        <Badge variant="outline" className="gap-1 font-normal">
-                          <span>{intervalInfo.emoji}</span> {intervalInfo.label}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground">Not scheduled</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {countdown ? (
-                        <span className={`flex items-center gap-1 ${countdown.color}`}>
-                          <Timer size={13} />
-                          {countdown.text}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {dep.last_run_at
-                        ? formatDistanceToNow(new Date(dep.last_run_at), { addSuffix: true })
-                        : "Never"}
-                    </TableCell>
-                    <TableCell>{dep.agents?.base_credit_cost ?? "—"}</TableCell>
-                    <TableCell className="text-right space-x-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        disabled={dep.status !== "active" || runningId === dep.id}
-                        onClick={() => handleRun(dep.id, dep.agents?.base_credit_cost ?? 1)}
-                        title="Run agent"
-                      >
-                        {runningId === dep.id ? (
-                          <Loader2 size={16} className="animate-spin" />
-                        ) : (
-                          <Zap size={16} className="text-accent" />
-                        )}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setScheduleDeployment(dep)}
-                        title="Schedule"
-                        disabled={dep.status !== "active"}
-                      >
-                        <Clock size={16} />
-                      </Button>
-                      {/* TODO: Add reconfigure flow */}
-                      <Button
-                        variant="ghost" size="icon"
-                        onClick={() => updateStatus.mutate({
-                          id: dep.id,
-                          status: dep.status === "active" ? "paused" : "active",
-                        })}
-                      >
-                        {dep.status === "active" ? <Pause size={16} /> : <Play size={16} />}
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <Trash2 size={16} className="text-destructive" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Deployment</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This will permanently delete this agent deployment and all its run history. This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => deleteDep.mutate(dep.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+        <div className="space-y-3">
+          {(deployments ?? []).map((dep) => {
+            const countdown = dep.schedule_enabled ? formatCountdown(dep.next_run_at) : null;
+            const intervalInfo = dep.schedule_interval ? INTERVAL_LABELS[dep.schedule_interval] ?? null : null;
+            return (
+              <Card key={dep.id}>
+                <CardContent className="p-4 space-y-3">
+                  {/* Row 1: Name + Status + Actions */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-medium text-sm truncate">{dep.agents?.name ?? "—"}</span>
+                      <Badge className={`shrink-0 ${statusStyles[dep.status] ?? ""}`}>{dep.status}</Badge>
+                    </div>
+                    <ActionButtons dep={dep} />
+                  </div>
+                  {/* Row 2: Details grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <div>
+                      <p className="text-muted-foreground">Schedule</p>
+                      <p className="font-medium mt-0.5">
+                        {dep.schedule_enabled && intervalInfo
+                          ? `${intervalInfo.emoji} ${intervalInfo.label}`
+                          : "Not scheduled"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Next Run</p>
+                      <p className={`font-medium mt-0.5 flex items-center gap-1 ${countdown?.color ?? "text-muted-foreground"}`}>
+                        {countdown ? <><Timer size={12} />{countdown.text}</> : "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Last Run</p>
+                      <p className="font-medium mt-0.5">
+                        {dep.last_run_at
+                          ? formatDistanceToNow(new Date(dep.last_run_at), { addSuffix: true })
+                          : "Never"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Credits/Run</p>
+                      <p className="font-medium mt-0.5">{dep.agents?.base_credit_cost ?? "—"}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 

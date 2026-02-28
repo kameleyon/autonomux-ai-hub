@@ -170,17 +170,17 @@ const Overview = () => {
         </div>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-lg font-medium">Dashboard</h1>
           <p className="text-xs text-muted-foreground">Welcome back, {profile?.display_name ?? "there"}!</p>
         </div>
         <Button variant="gradient" size="sm" asChild>
-          <Link to="/marketplace"><Plus size={14} className="mr-1.5" />Deploy New Agent</Link>
+          <Link to="/marketplace"><Plus size={14} className="mr-1.5" />Deploy</Link>
         </Button>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <StatCard
           label="Active Agents"
           value={activeAgents}
