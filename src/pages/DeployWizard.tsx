@@ -53,6 +53,8 @@ const FRIENDLY_LABELS: Record<string, string> = {
 };
 
 const SCHEDULE_INTERVALS = [
+  { value: "every_3_min", label: "Every 3 minutes", hint: "For testing only" },
+  { value: "every_15_min", label: "Every 15 minutes", hint: "Best for real-time monitoring" },
   { value: "every_hour", label: "Hourly", hint: "Good for email & social media" },
   { value: "every_6_hours", label: "Every 6 hours", hint: "4 times per day" },
   { value: "every_12_hours", label: "Every 12 hours", hint: "Morning & evening" },

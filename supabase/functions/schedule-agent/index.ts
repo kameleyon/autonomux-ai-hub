@@ -13,6 +13,7 @@ function isValidUUID(value: string): boolean {
 }
 
 const INTERVALS: Record<string, { cron: string; label: string }> = {
+  every_3_min: { cron: "*/3 * * * *", label: "Every 3 minutes" },
   every_15_min: { cron: "*/15 * * * *", label: "Every 15 minutes" },
   every_hour: { cron: "0 * * * *", label: "Hourly" },
   every_6_hours: { cron: "0 */6 * * *", label: "Every 6 hours" },
@@ -168,6 +169,7 @@ Deno.serve(async (req) => {
       const now = new Date();
       const nextRun = new Date(now);
       switch (interval) {
+        case "every_3_min": nextRun.setMinutes(nextRun.getMinutes() + 3); break;
         case "every_15_min": nextRun.setMinutes(nextRun.getMinutes() + 15); break;
         case "every_hour": nextRun.setHours(nextRun.getHours() + 1, 0, 0, 0); break;
         case "every_6_hours": nextRun.setHours(nextRun.getHours() + 6, 0, 0, 0); break;
