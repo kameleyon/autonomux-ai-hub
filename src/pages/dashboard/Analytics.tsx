@@ -10,7 +10,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Activity, Zap, Clock, CheckCircle, ArrowRight, TrendingUp } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import {
@@ -155,8 +154,8 @@ const Analytics = () => {
           <h1 className="text-2xl font-medium font-display">Analytics</h1>
           <div className="flex gap-1"><Skeleton className="h-9 w-20" /><Skeleton className="h-9 w-20" /><Skeleton className="h-9 w-20" /></div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
+      <div className="grid grid-cols-2 gap-4">
+           {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
         </div>
         <Skeleton className="h-[300px] rounded-xl" />
         <div className="grid md:grid-cols-2 gap-6">
@@ -208,7 +207,7 @@ const Analytics = () => {
 
       {/* Key Metrics */}
       {metrics && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           {[
             { icon: Activity, label: "Total Runs", value: metrics.total, sub: `Last ${days} Days` },
             { icon: Zap, label: "Credits Spent", value: metrics.creditsSpent, sub: `~$${(metrics.creditsSpent * 0.10).toFixed(2)}` },
@@ -303,40 +302,39 @@ const Analytics = () => {
         </Card>
       </div>
 
-      {/* Performance Table */}
+      {/* Performance Cards */}
       <Card>
         <CardContent className="p-5 space-y-4">
           <h3 className="font-medium">Agent Performance</h3>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Agent</TableHead>
-                  <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("runs")}>Runs{sortIndicator("runs")}</TableHead>
-                  <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("successRate")}>Success Rate{sortIndicator("successRate")}</TableHead>
-                  <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("avgDuration")}>Avg Duration{sortIndicator("avgDuration")}</TableHead>
-                  <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("credits")}>Credits{sortIndicator("credits")}</TableHead>
-                  <TableHead>Last Run</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedPerformance.map(a => (
-                  <TableRow key={a.name}>
-                    <TableCell className="font-medium">{a.name}</TableCell>
-                    <TableCell>{a.runs}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Progress value={a.successRate} className={`h-2 w-16 ${a.successRate >= 80 ? "[&>div]:bg-green-500" : a.successRate >= 50 ? "[&>div]:bg-yellow-500" : "[&>div]:bg-red-500"}`} />
-                        <span className="text-xs">{a.successRate.toFixed(0)}%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{a.avgDuration.toFixed(1)}s</TableCell>
-                    <TableCell>{a.credits}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(a.lastRun), { addSuffix: true })}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <div className="space-y-2">
+            {sortedPerformance.map(a => (
+              <Card key={a.name}>
+                <CardContent className="p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-sm">{a.name}</span>
+                    <span className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(a.lastRun), { addSuffix: true })}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3 text-xs">
+                    <div>
+                      <p className="text-muted-foreground">Runs</p>
+                      <p className="font-medium">{a.runs}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Avg Duration</p>
+                      <p className="font-medium">{a.avgDuration.toFixed(1)}s</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Credits</p>
+                      <p className="font-medium">{a.credits}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Progress value={a.successRate} className={`h-2 flex-1 ${a.successRate >= 80 ? "[&>div]:bg-green-500" : a.successRate >= 50 ? "[&>div]:bg-yellow-500" : "[&>div]:bg-red-500"}`} />
+                    <span className="text-xs font-medium">{a.successRate.toFixed(0)}%</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </CardContent>
       </Card>
