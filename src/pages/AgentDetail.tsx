@@ -211,7 +211,9 @@ const AgentDetail = () => {
                                 {field.type === "select" && field.options ? (
                                   <p className="text-xs text-muted-foreground">Choose from: {field.options.join(", ")}</p>
                                 ) : (
-                                  <p className="text-xs text-muted-foreground">You'll type this in{field.default ? ` (example: "${field.default}")` : ""}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {field.placeholder || field.label || (field.default ? `Example: "${field.default}"` : "You'll type this in")}
+                                  </p>
                                 )}
                               </div>
                             </div>
