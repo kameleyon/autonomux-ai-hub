@@ -9,6 +9,7 @@ import logo from "@/assets/logo.png";
 const navLinks = [
   { label: "Marketplace", href: "/marketplace" },
   { label: "Pricing", href: "/pricing" },
+  { label: "How It Works", href: "/#how-it-works" },
 ];
 
 const Navbar = () => {
@@ -33,13 +34,6 @@ const Navbar = () => {
     localStorage.setItem("autonomux-theme", dark ? "dark" : "light");
   }, [dark]);
 
-  const handleHowItWorks = () => {
-    if (window.location.pathname === "/") {
-      document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
-    } else {
-      window.location.href = "/#how-it-works";
-    }
-  };
 
   return (
     <nav
@@ -69,12 +63,6 @@ const Navbar = () => {
                 {link.label}
               </Link>
             ))}
-            <button
-              onClick={handleHowItWorks}
-              className="text-sm text-muted-foreground hover:text-foreground dark:text-sidebar-foreground/70 dark:hover:text-sidebar-foreground transition-colors bg-transparent border-0 p-0 min-h-0 cursor-pointer font-inherit"
-            >
-              How It Works
-            </button>
           </div>
 
           {/* Desktop actions */}
@@ -154,12 +142,6 @@ const Navbar = () => {
                 {link.label}
               </Link>
             ))}
-            <button
-              onClick={() => { setMobileOpen(false); handleHowItWorks(); }}
-              className="block text-sm text-muted-foreground hover:text-foreground dark:text-sidebar-foreground/70 dark:hover:text-sidebar-foreground py-2 w-full text-left"
-            >
-              How It Works
-            </button>
             <div className="pt-3 border-t border-border dark:border-sidebar-border flex flex-col gap-2">
               {user ? (
                 <>
