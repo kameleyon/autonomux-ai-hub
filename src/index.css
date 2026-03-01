@@ -129,7 +129,7 @@
   }
 
   /* Mobile touch targets — minimum 44px for accessibility */
-  button, a, [role="button"] {
+  button:not([data-state]), a, [role="button"]:not([data-state]) {
     min-height: 44px;
   }
 
