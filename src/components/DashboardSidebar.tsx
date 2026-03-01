@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { useRealtimeStatus } from "@/hooks/useRealtimeStatus";
 import {
-  LayoutDashboard, Bot, History, CreditCard, KeyRound, Settings, LogOut, Sun, Moon, ChevronUp, BarChart3,
+  LayoutDashboard, Bot, History, CreditCard, KeyRound, Settings, LogOut, Sun, Moon, ChevronUp, BarChart3, Store,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import {
@@ -32,6 +32,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 const links = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Marketplace", href: "/marketplace", icon: Store },
   { label: "My Agents", href: "/dashboard/agents", icon: Bot },
   { label: "Run History", href: "/dashboard/runs", icon: History },
   { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
