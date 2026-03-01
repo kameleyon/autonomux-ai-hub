@@ -71,7 +71,7 @@ const Navbar = () => {
             ))}
             <button
               onClick={handleHowItWorks}
-              className="text-sm text-muted-foreground hover:text-foreground dark:text-sidebar-foreground/70 dark:hover:text-sidebar-foreground transition-colors"
+              className="text-sm text-muted-foreground hover:text-foreground dark:text-sidebar-foreground/70 dark:hover:text-sidebar-foreground transition-colors bg-transparent border-0 p-0 min-h-0 cursor-pointer font-inherit"
             >
               How It Works
             </button>

@@ -68,7 +68,7 @@ const Index = () => {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground pt-2">
-              ✨ Start free — 25 credits included, no credit card required
+              Start free — 25 credits included, no credit card required
             </p>
             {/* Trust stats */}
             <div className="flex items-center justify-center lg:justify-start gap-6 sm:gap-8 pt-8">

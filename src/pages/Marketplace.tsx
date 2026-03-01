@@ -136,7 +136,7 @@ const Marketplace = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-medium font-display mb-2">Agent Marketplace</h1>
           <p className="text-muted-foreground">Pick an AI agent, set it up in clicks, and get results in seconds</p>
-          <p className="text-xs text-accent mt-1">🎉 Every account starts with 25 free credits — no credit card needed</p>
+          <p className="text-xs text-accent mt-1">Every account starts with 25 free credits — no credit card needed</p>
         </div>
 
         {/* Search + Sort */}
