@@ -7,7 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Loader2, Sparkles, Plus } from "lucide-react";
+import { Loader2, Sparkles, Plus, X } from "lucide-react";
 import type { DeploymentWithAgent } from "@/types/deployment";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -29,11 +29,12 @@ export function GenerateTitlesDialog({ open, onOpenChange, deployment }: Generat
   const [generating, setGenerating] = useState(false);
   const [titles, setTitles] = useState<string[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [localQueue, setLocalQueue] = useState<string[] | null>(null);
 
   const config = (deployment.config ?? {}) as Record<string, any>;
   const context = (config.title_generation_context ?? {}) as Record<string, string>;
-  const existingQueue: string[] = config.scheduled_topic_queue ?? [];
-
+  const savedQueue: string[] = config.scheduled_topic_queue ?? [];
+  const existingQueue = localQueue ?? savedQueue;
   const effectiveTopic = (context.topic || config.topic || "") as string;
   const effectiveWritingFocus = (config.writing_focus || context.writing_focus || "") as string;
   const effectiveSourceUrls = (context.source_urls || config.source_urls || "") as string;
@@ -95,6 +96,22 @@ export function GenerateTitlesDialog({ open, onOpenChange, deployment }: Generat
     });
   };
 
+  const removeFromQueue = async (index: number) => {
+    const updated = existingQueue.filter((_, i) => i !== index);
+    setLocalQueue(updated);
+    const { error } = await supabase
+      .from("deployments")
+      .update({ config: { ...config, scheduled_topic_queue: updated } as unknown as Json })
+      .eq("id", deployment.id);
+    if (error) {
+      toast.error("Failed to remove title");
+      setLocalQueue(null);
+    } else {
+      qc.invalidateQueries({ queryKey: ["my-deployments"] });
+      toast.success("Title removed from queue");
+    }
+  };
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const newTitles = Array.from(selected).sort((a, b) => a - b).map((i) => titles[i]);
@@ -108,6 +125,7 @@ export function GenerateTitlesDialog({ open, onOpenChange, deployment }: Generat
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["my-deployments"] });
       toast.success(`${selected.size} titles added to the queue!`);
+      setLocalQueue(null);
       onOpenChange(false);
     },
     onError: (err: any) => toast.error(err.message || "Failed to save"),
@@ -211,9 +229,16 @@ export function GenerateTitlesDialog({ open, onOpenChange, deployment }: Generat
               <p className="text-xs font-medium text-muted-foreground">Current Queue ({existingQueue.length})</p>
               <div className="max-h-[150px] overflow-y-auto space-y-1">
                 {existingQueue.map((t, i) => (
-                  <div key={i} className="text-xs p-2 bg-muted/50 rounded flex items-start gap-2 min-w-0">
+                  <div key={i} className="text-xs p-2 bg-muted/50 rounded flex items-center gap-2 min-w-0 group">
                     <span className="text-muted-foreground shrink-0">{i + 1}.</span>
-                    <span className="break-words min-w-0">{t}</span>
+                    <span className="break-words min-w-0 flex-1">{t}</span>
+                    <button
+                      onClick={() => removeFromQueue(i)}
+                      className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive p-0 bg-transparent border-0 cursor-pointer min-h-0"
+                      title="Remove from queue"
+                    >
+                      <X size={14} />
+                    </button>
                   </div>
                 ))}
               </div>
