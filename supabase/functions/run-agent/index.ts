@@ -93,18 +93,16 @@ async function getPrompt(category: string, slug: string, config: Record<string, 
           ? illustrationPrompt
           : `A warm, personal, and organic hand-drawn digital illustration in WIDE LANDSCAPE 16:9 format serving as a blog header for an article about: ${articleTopic}. The artwork features stylized figures and scenes integrated into the topic. IMPORTANT DIVERSITY REQUIREMENT: Any people depicted MUST represent a diverse mix of ethnicities, cultures, and skin tones — include Black, Asian, Latino, Middle Eastern, South Asian, Indigenous, and mixed-race individuals. Never default to only white or light-skinned people. Style: rough brush strokes, visible grain textures, handcrafted feel, muted terracotta, mustard yellows, sage greens, and soft natural browns color palette with low contrast. Subtle filmic grain and paper texture over the canvas. IMPORTANT: The image MUST be wide landscape format (roughly 1280x720 or 16:9 ratio). No text in the image.`;
         try {
-          const orKey = Deno.env.get("OPENROUTER_API_KEY");
-          if (orKey) {
-            const imgRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+          if (lovableKey) {
+            const imgRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
               method: "POST",
               headers: {
-                Authorization: `Bearer ${orKey}`,
+                Authorization: `Bearer ${lovableKey}`,
                 "Content-Type": "application/json",
-                "HTTP-Referer": "https://autonomux.lovable.app",
-                "X-Title": "Autonomux",
               },
               body: JSON.stringify({
-                model: "google/gemini-3.1-flash-image-preview",
+                model: "google/gemini-3-pro-image-preview",
                 messages: [{ role: "user", content: imagePrompt }],
                 modalities: ["image", "text"],
               }),
