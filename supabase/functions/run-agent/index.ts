@@ -613,7 +613,7 @@ Deno.serve(async (req) => {
               { role: "system", content: system },
               { role: "user", content: userMsg },
             ],
-            max_tokens: agent.slug === "blog-writer" ? 6000 : 4000,
+            max_tokens: agent.slug === "blog-writer" ? 12000 : 4000,
           }),
         });
 
