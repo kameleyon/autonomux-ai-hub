@@ -675,7 +675,7 @@ Deno.serve(async (req) => {
     const apiCostCents = Math.ceil(tokensUsed / 1000);
 
     const outputContent = llmData.choices?.[0]?.message?.content ?? "";
-    const outputSummary = outputContent.substring(0, 5000);
+    const outputSummary = outputContent.substring(0, 50000);
 
     await adminClient
       .from("runs")
