@@ -93,7 +93,7 @@ const AgentDetail = () => {
       } else if (data?.error) {
         toast.error(data.error);
       } else {
-        toast.success("Agent ran successfully!");
+        toast.success("Agent run started — results will appear in your dashboard shortly.");
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Run failed";

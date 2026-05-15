@@ -121,7 +121,7 @@ const MyAgents = () => {
           toast.error(typeof data.error === "string" ? data.error.substring(0, 100) : "Run failed");
         }
       } else {
-        toast.success("Agent ran successfully!");
+        toast.success("Agent run started — results will appear in your dashboard shortly.");
         qc.invalidateQueries({ queryKey: ["my-deployments"] });
         qc.invalidateQueries({ queryKey: ["my-runs"] });
         qc.invalidateQueries({ queryKey: ["profile"] });

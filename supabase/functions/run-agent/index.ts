@@ -552,6 +552,14 @@ Deno.serve(async (req) => {
     const config = (deployment.config as Record<string, any>) ?? {};
     const runConfig = { ...config };
 
+    // ===== Background processing =====
+    // The LLM + image-gen work for some agents (esp. blog-writer) can exceed the
+    // client's HTTP timeout. Do the heavy work in the background and return the
+    // queued run immediately. The frontend listens via realtime on the `runs`
+    // table, so it will update when the row transitions to success/failed.
+    const processRun = async () => {
+      try {
+
     // For blog-writer: fetch previous output titles to avoid repetition
     let previousTopics: string[] = [];
     if (agent.slug === "blog-writer") {
@@ -803,10 +811,37 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: updatedRun } = await adminClient.from("runs").select("*").eq("id", run.id).single();
+      } catch (bgErr: any) {
+        trackError(bgErr, "run-agent:background");
+        // Refund credits and mark the run failed so the UI doesn't spin forever
+        try {
+          await adminClient.rpc("refund_credits", { p_user_id: userId, p_amount: creditCost });
+          await adminClient.from("transactions").insert({
+            user_id: userId, type: "refund", credits: creditCost, amount_cents: 0,
+          });
+          await adminClient.from("runs").update({
+            status: "failed",
+            error_message: bgErr?.message || "Background processing failed",
+            completed_at: new Date().toISOString(),
+          }).eq("id", run.id);
+        } catch (cleanupErr) {
+          trackError(cleanupErr, "run-agent:background-cleanup");
+        }
+      }
+    };
 
-    return new Response(JSON.stringify({ run: updatedRun }), {
-      status: 200,
+    // Kick off background work; return immediately so the client doesn't time out.
+    // @ts-ignore EdgeRuntime is provided by the Deno edge runtime
+    if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) {
+      // @ts-ignore
+      EdgeRuntime.waitUntil(processRun());
+    } else {
+      // Fallback: fire-and-forget (shouldn't happen on Supabase edge runtime)
+      processRun();
+    }
+
+    return new Response(JSON.stringify({ run, queued: true }), {
+      status: 202,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
