@@ -132,7 +132,7 @@ const Overview = () => {
           toast.error(data.error);
         }
       } else {
-        toast.success("Agent ran successfully!");
+        toast.success("Agent run started — results will appear in your dashboard shortly.");
         qc.invalidateQueries({ queryKey: ["my-runs-overview"] });
         qc.invalidateQueries({ queryKey: ["profile"] });
       }
