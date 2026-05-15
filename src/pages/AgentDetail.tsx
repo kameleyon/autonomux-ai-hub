@@ -94,6 +94,7 @@ const AgentDetail = () => {
         toast.error(data.error);
       } else {
         toast.success("Agent run started — results will appear in your dashboard shortly.");
+        navigate(data?.run?.id ? `/dashboard/runs?run=${data.run.id}` : "/dashboard/runs");
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Run failed";

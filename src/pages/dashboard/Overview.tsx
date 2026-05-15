@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -60,6 +60,7 @@ const StatCard = ({
 
 const Overview = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   useRealtimeRuns(user?.id);
   useRealtimeDeployments(user?.id);
@@ -135,6 +136,7 @@ const Overview = () => {
         toast.success("Agent run started — results will appear in your dashboard shortly.");
         qc.invalidateQueries({ queryKey: ["my-runs-overview"] });
         qc.invalidateQueries({ queryKey: ["profile"] });
+          navigate(data?.run?.id ? `/dashboard/runs?run=${data.run.id}` : "/dashboard/runs");
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Run failed";
