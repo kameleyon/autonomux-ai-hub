@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -51,6 +52,7 @@ function formatCountdown(nextRunAt: string | null): { text: string; color: strin
 
 const MyAgents = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   useRealtimeRuns(user?.id);
   useRealtimeDeployments(user?.id);
@@ -125,6 +127,7 @@ const MyAgents = () => {
         qc.invalidateQueries({ queryKey: ["my-deployments"] });
         qc.invalidateQueries({ queryKey: ["my-runs"] });
         qc.invalidateQueries({ queryKey: ["profile"] });
+        navigate(data?.run?.id ? `/dashboard/runs?run=${data.run.id}` : "/dashboard/runs");
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Run failed";

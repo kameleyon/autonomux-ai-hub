@@ -1,8 +1,9 @@
-import { Fragment, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRealtimeRuns } from "@/hooks/useRealtimeRuns";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ const PAGE_SIZE = 20;
 
 const RunHistory = () => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   useRealtimeRuns(user?.id);
   const [statusFilter, setStatusFilter] = useState("all");
   const [agentFilter, setAgentFilter] = useState("all");
@@ -81,6 +83,21 @@ const RunHistory = () => {
   const totalCredits = filtered.reduce((sum, r) => sum + (r.credits_used ?? 0), 0);
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+  useEffect(() => {
+    const runId = searchParams.get("run");
+    if (!runId || !(runs ?? []).some((run) => run.id === runId)) return;
+
+    const runIndex = filtered.findIndex((run) => run.id === runId);
+    if (runIndex >= 0) {
+      setExpanded(runId);
+      setPage(Math.floor(runIndex / PAGE_SIZE));
+    }
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("run");
+    setSearchParams(nextParams, { replace: true });
+  }, [filtered, runs, searchParams, setSearchParams]);
 
   const formatDuration = (run: { started_at: string | null; completed_at: string | null }) => {
     if (!run.started_at || !run.completed_at) return "—";
