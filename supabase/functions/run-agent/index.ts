@@ -552,6 +552,14 @@ Deno.serve(async (req) => {
     const config = (deployment.config as Record<string, any>) ?? {};
     const runConfig = { ...config };
 
+    // ===== Background processing =====
+    // The LLM + image-gen work for some agents (esp. blog-writer) can exceed the
+    // client's HTTP timeout. Do the heavy work in the background and return the
+    // queued run immediately. The frontend listens via realtime on the `runs`
+    // table, so it will update when the row transitions to success/failed.
+    const processRun = async () => {
+      try {
+
     // For blog-writer: fetch previous output titles to avoid repetition
     let previousTopics: string[] = [];
     if (agent.slug === "blog-writer") {
